@@ -8,9 +8,11 @@ import {
   IconChevronUpDown,
 } from "@/components/icons";
 import { useCreateWorkspaceDrawer } from "@/composables/useCreateWorkspaceDrawer";
+import { useCan } from "@/composables/useCan";
 
 const org = useOrgStore();
 const createDrawer = useCreateWorkspaceDrawer();
+const can = useCan();
 
 const open = ref(false);
 const rootRef = ref(null);
@@ -194,6 +196,7 @@ onBeforeUnmount(() => {
       <!-- Footer actions -->
       <div class="border-t border-ink-100">
         <button
+          v-if="can('workspace.create')"
           class="w-full flex items-center gap-[10px] px-3 py-[10px] bg-transparent border-0 cursor-pointer text-left text-[13.5px] text-ink-900 hover:bg-ink-100 transition-colors"
           @click="close(); createDrawer.open()"
         >

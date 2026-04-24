@@ -110,6 +110,34 @@ Today: `workspaces`.
 
 **Rule of thumb:** start with the policy approach. Promote to an RPC when you need multi-step atomicity, a friendly error message, or validation that doesn't fit cleanly in `WITH CHECK`.
 
+---
+
+## Permissions (UI-side RBAC)
+
+Role → allowed-action mappings live in `src/lib/permissions.js`. A `useCan()` composable exposes `can('action')` that reads `org.currentRole` reactively — swapping orgs/workspaces updates every gated element automatically.
+
+```js
+// lib/permissions.js
+const BY_ROLE = {
+  owner: ['workspace.create', 'member.invite', 'org.settings', ...],
+  admin: ['workspace.create', 'member.invite', ...],
+  member: [],
+}
+export const can = (role, action) => !!role && (BY_ROLE[role] ?? []).includes(action)
+```
+
+```vue
+<script setup>
+import { useCan } from '@/composables/useCan'
+const can = useCan()
+</script>
+<template>
+  <button v-if="can('workspace.create')">Create</button>
+</template>
+```
+
+**This is UI gating, not enforcement.** DB-side RLS policies and RPC role checks are the security boundary; the permissions map exists to hide buttons that would otherwise fail on click. When policy changes, update both places in the same PR.
+
 **Current RPCs:**
 - `complete_onboarding(p_org_name, p_org_domain)` — creates an org + owner membership + default Sales workspace atomically.
 

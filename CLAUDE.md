@@ -36,6 +36,24 @@ Component → Pinia store → service (plain async fn) → Supabase
 - **INSERT policy + grant** for single-table inserts with authorization expressible as a `WITH CHECK` predicate. Today: `workspaces` (owners/admins can insert via `supabase.from('workspaces').insert(...)`).
 - **Rule of thumb:** start with the policy. Promote to an RPC when you need multi-step atomicity or custom error messaging.
 
+## Permissions (UI gating)
+
+Role → allowed actions map lives in [src/lib/permissions.js](src/lib/permissions.js). UI code uses the `useCan()` composable:
+
+```vue
+<script setup>
+import { useCan } from '@/composables/useCan'
+const can = useCan()
+</script>
+<template>
+  <button v-if="can('workspace.create')">…</button>
+</template>
+```
+
+`can(action)` reads `org.currentRole` reactively, so swapping workspaces/orgs updates gated UI automatically. Actions are dotted strings (`workspace.create`, `member.invite`, `org.delete`). When adding a new gated action, extend the arrays in `permissions.js` and use the same action string at the call site.
+
+**Important:** this is UI-only gating. The DB (RLS policies + RPC role checks) is the authoritative enforcement. Keep the permissions map and the DB rules in sync when policy changes — when in doubt, the server wins.
+
 **Multi-tenant.** Users belong to orgs via `memberships(org_id, user_id, role)`. A user can have 0+ orgs. `isOnboarded = memberships.length > 0`. Roles: `owner | admin | member`. One owner per org enforced by a unique partial index.
 
 ## Routing
