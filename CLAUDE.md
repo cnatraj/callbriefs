@@ -1,0 +1,111 @@
+# CallBriefs
+
+B2B SaaS for sales reps. Turns a call transcript or recording into a personalized prospect-facing microsite ("brief") — with the prospect's priorities, next steps, and relevant collateral pulled from a shared Knowledge library. Mobile-first, sent to the buyer as a private link after a discovery call.
+
+## Quick reference
+
+**Stack:** Vue 3 (`<script setup>`), Pinia, Vue Router 4, Vite, Tailwind. Supabase for auth + Postgres + edge functions. Anthropic API called from Supabase Edge Functions (never from the frontend).
+
+**Commands:**
+- `npm run dev` — Vite dev server
+- `npm run build` — production build
+- No test runner yet
+
+**Companion docs (read when relevant):**
+- [docs/callbriefs-architecture.md](docs/callbriefs-architecture.md) — code layout, service/store layer, conventions
+- [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — current consolidated DB schema (apply to a fresh Supabase project)
+- [design.md](design.md) — design system (colors, typography, spacing, components)
+- [sql/](sql/) — migration files, apply in order (see below)
+
+## Architecture in 30 seconds
+
+**Service-layer pattern.** Components never call Supabase directly:
+
+```
+Component → Pinia store → service (plain async fn) → Supabase
+```
+
+**Pinia stores (global state):**
+- `stores/auth.js` — session, user, sign-in/out actions
+- `stores/org.js` — memberships, `currentOrgId`, `currentOrg`, `currentRole`, `isOnboarded`, onboarding action
+
+**Services (`src/services/`):** `auth.js`, `organizations.js`, `memberships.js`. Plain async functions, no Vue, no state. Add new ones per entity.
+
+**Write patterns — pick per operation:**
+- **SECURITY DEFINER RPC** for multi-table atomic writes, custom error messages, or complex validation. Today: `complete_onboarding` (org + membership + workspace in one transaction). Future: `accept_invite`. `organizations` and `memberships` have no INSERT grants to `authenticated` — the RPC is the only write path.
+- **INSERT policy + grant** for single-table inserts with authorization expressible as a `WITH CHECK` predicate. Today: `workspaces` (owners/admins can insert via `supabase.from('workspaces').insert(...)`).
+- **Rule of thumb:** start with the policy. Promote to an RPC when you need multi-step atomicity or custom error messaging.
+
+**Multi-tenant.** Users belong to orgs via `memberships(org_id, user_id, role)`. A user can have 0+ orgs. `isOnboarded = memberships.length > 0`. Roles: `owner | admin | member`. One owner per org enforced by a unique partial index.
+
+## Routing
+
+`src/router/index.js` defines all routes + a single `beforeEach` guard.
+
+**Route meta:**
+- `meta: { layout: 'auth' | 'onboarding' | 'microsite' }` — bypass `AppShell` (sidebar + header). `App.vue` checks `isBareLayout` to decide.
+- `meta: { public: true }` — bypass the auth guard (login, signup, auth callback, prospect-facing microsite).
+
+**Guard order (critical, don't reorder):**
+1. `await auth.init()` — reads session from storage / URL code exchange.
+2. If authed, `await org.init()` — loads memberships.
+3. Apply redirect rules.
+
+Both `init()`s cache a shared promise so repeat calls are cheap. The first navigation fires during `app.use(router)` — *before* `app.mount()` — which is why the awaits are required.
+
+**Redirects the guard handles:**
+- Unauthenticated + private route → `/login`
+- Authenticated + `/login` or `/signup` → `/briefs` (if onboarded) or `/onboarding`
+- Authenticated + not onboarded + private route → `/onboarding`
+- Authenticated + onboarded + `/onboarding` → `/briefs`
+
+## Auth
+
+- Providers: email/password + Google OAuth (via Supabase).
+- Email confirmation: **OFF** in dev so signup produces a session immediately.
+- Google OAuth redirects to `/auth/callback`, which refreshes the session, loads memberships, then routes based on `isOnboarded`.
+- A Postgres trigger (`on_auth_user_created`) auto-inserts a `public.users` row on every `auth.users` insert — works for both email and OAuth signups, so app code never has to remember to create a profile.
+- `.env` holds `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY`. `.gitignore`'d.
+
+## Migration pattern
+
+SQL files in [sql/](sql/) are named `<adjective>-<animal>.sql` — arbitrary codenames so filenames don't collide. Each wraps `begin; … commit;`. Applied in order via the Supabase SQL Editor.
+
+**Applied so far (for reference, not to re-run blindly):**
+1. `wandering-otter.sql` — multi-tenant refactor (drop `users.org_id`, create `memberships`, rewrite RLS)
+2. `humming-sparrow.sql` — trigger to auto-create `public.users` on auth signup
+3. `curious-badger.sql` — `complete_onboarding` RPC
+4. `quiet-heron.sql` — fix recursive RLS on `memberships`
+5. `racing-fox.sql` — `GRANT SELECT` on memberships to `authenticated`
+6. `galloping-deer.sql` — grants across all public tables + default privileges for future tables
+7. `climbing-goat.sql` — extends `complete_onboarding` to also create a default Sales workspace
+8. `roaming-lynx.sql` — `create_workspace` RPC (owner/admin-only, called from the Create Workspace drawer)
+9. `dancing-falcon.sql` — replaces the `create_workspace` RPC with an INSERT policy + grant (simpler pattern for single-table inserts)
+
+For a cold start against a fresh Supabase project, run [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — it's the consolidated final state.
+
+## Gotchas
+
+- **Tailwind body default is 14px.** Don't write `text-[14px]` — it's already the default in `tokens.css`. Only set explicit sizes when different from 14.
+- **Top-level `await` is not in the build target.** `main.js` uses `.then()` chains. Don't convert to top-level await without also bumping the Vite target.
+- **Router's first navigation fires during `app.use(router)`, not on mount.** The guard must `await auth.init()` and `await org.init()` because it can't assume the stores are populated yet.
+- **New public tables need explicit `GRANT SELECT` to `authenticated`.** RLS only runs on top of table grants. Default privileges are set (see `galloping-deer.sql`) so any future tables auto-grant `SELECT` — but if you add a migration that bypasses this, remember.
+- **Don't write self-referencing RLS policies.** A policy on `memberships` that queries `memberships` causes infinite recursion (silent empty result on some setups, 500 on others). Use a `SECURITY DEFINER` helper function if you need cross-row checks.
+- **Profile row creation is automatic.** Don't manually insert `public.users` on signup — the trigger handles it. The name comes from `raw_user_meta_data->>'full_name'` (set by email signup) or `->>'name'` (set by Google).
+- **`session.value` on the auth store is the source of truth for session state.** Driven by `onAuthStateChange`. Don't cache auth state elsewhere.
+
+## What's built
+
+- Auth: email signup/login, Google OAuth, `/auth/callback`, sign out
+- Onboarding: one-step workspace creation → `complete_onboarding` RPC → `/briefs`
+- App shell: sidebar, header with avatar-menu sign out
+- Static mock pages: Dashboard (Briefs), Knowledge, Users, Settings — not wired to DB yet
+- Prospect-facing microsite at `/m/:id?` — static mock content
+
+## Not built yet (tracked roughly)
+
+- Invites flow — `invites` table, `accept_invite` RPC, `/accept-invite` view. Email-based, tokenized.
+- Org switcher UI in the header (schema supports multi-org; UI assumes one)
+- Real data wiring for Calls, Microsites, Documents — currently `src/data/*.js` stubs
+- Supabase Edge Functions for AI work: `process-transcript`, `generate-microsite`, `extract-document`
+- Teammate visibility in `users` RLS — needs a `SECURITY DEFINER` helper (`is_member_of_org(org_id)`) so the Users page can list coworkers

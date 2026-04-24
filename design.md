@@ -250,3 +250,15 @@ Selected values persist via the host edit-mode protocol (`__edit_mode_set_keys`)
 - If you're adding a chart, prefer a single-color sparkline or a bar chart in `--ink-700` before reaching for multi-color. Reserve semantic colors for semantic meaning (ok/warn/danger), not variety.
 - Every page root must carry a `data-screen-label` attribute so the host can reference it in comments.
 - Never use emoji.
+
+---
+
+## 13. Off-spec surfaces (intentional)
+
+Some views sit outside this system on purpose:
+
+- **Prospect-facing microsite** (`/m/:id?`) — a 440px-wide card on a dotted backdrop, own shadow/radius/typography scale, sticky bottom CTA. This is the buyer-facing artifact, not the internal app. It shares the color tokens and fonts from this doc, but its layout is intentionally different (personal, premium, mobile-first). Treat it as its own design system; don't port its patterns back into the internal app.
+- **Auth surfaces** (`/login`, `/signup`) — centered 420px card on a plain warm-white background, no AppShell. Uses design-system tokens but doesn't follow the app-shell geometry.
+- **Onboarding** (`/onboarding`) — dotted backdrop (same as microsite), centered content, no AppShell. Step pill + form.
+
+All three bypass `AppShell` via `meta: { layout: ... }` in the router.

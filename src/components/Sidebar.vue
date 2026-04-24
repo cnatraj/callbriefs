@@ -1,12 +1,12 @@
 <script setup>
 import NavItem from "./NavItem.vue";
+import OrgWorkspaceSwitcher from "./sidebar/OrgWorkspaceSwitcher.vue";
 import {
   IconPlus,
   IconBriefs,
   IconKnowledge,
   IconUsers,
   IconSettings,
-  IconChevronDown,
 } from "./icons";
 import { useNewBriefModal } from "@/composables/useNewBriefModal";
 
@@ -48,16 +48,8 @@ const { open } = useNewBriefModal();
       </span>
     </div>
 
-    <!-- Workspace switcher -->
-    <div
-      class="flex items-center justify-between px-2 py-[6px] mb-[6px] -mt-1 rounded-sm cursor-pointer hover:bg-nav-hover transition-colors"
-    >
-      <div>
-        <div class="text-[12.5px] font-medium">Acme Sales · West</div>
-        <div class="text-[12px] text-ink-500">12 seats · Business</div>
-      </div>
-      <IconChevronDown :size="14" class="text-ink-500" />
-    </div>
+    <!-- Org + workspace switcher -->
+    <OrgWorkspaceSwitcher class="mb-[10px]" />
 
     <!-- Primary CTA -->
     <button

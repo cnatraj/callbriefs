@@ -43,6 +43,7 @@ export const IconBell = make(() => [
   h('path', { d: 'M10.3 21a1.9 1.9 0 0 0 3.4 0' }),
 ])
 export const IconChevronDown = make(path('m6 9 6 6 6-6'))
+export const IconChevronUpDown = make(path('M8 9l4-4 4 4M8 15l4 4 4-4'))
 export const IconArrowRight = make(path('M5 12h14M13 6l6 6-6 6'))
 export const IconArrowUpRight = make(path('M7 17 17 7M8 7h9v9'))
 export const IconSparkle = make(

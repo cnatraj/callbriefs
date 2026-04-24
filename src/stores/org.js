@@ -4,14 +4,18 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from './auth'
 import * as membershipsService from '@/services/memberships'
 import * as orgsService from '@/services/organizations'
+import * as workspacesService from '@/services/workspaces'
 
 const LS_KEY = 'cb.currentOrgId'
+const LS_WORKSPACE_KEY = 'cb.currentWorkspaceId'
 let initPromise = null
 let subscribed = false
 
 export const useOrgStore = defineStore('org', () => {
   const memberships = ref([])
   const currentOrgId = ref(null)
+  const workspaces = ref([])
+  const currentWorkspaceId = ref(null)
   const loading = ref(false)
   const error = ref(null)
 
@@ -27,6 +31,9 @@ export const useOrgStore = defineStore('org', () => {
     () => currentMembership.value?.organizations ?? null,
   )
   const currentRole = computed(() => currentMembership.value?.role ?? null)
+  const currentWorkspace = computed(
+    () => workspaces.value.find((w) => w.id === currentWorkspaceId.value) ?? null,
+  )
 
   const pickCurrentOrgId = () => {
     const stored = localStorage.getItem(LS_KEY)
@@ -39,11 +46,40 @@ export const useOrgStore = defineStore('org', () => {
     if (currentOrgId.value) localStorage.setItem(LS_KEY, currentOrgId.value)
   }
 
+  const pickCurrentWorkspaceId = () => {
+    const stored = localStorage.getItem(LS_WORKSPACE_KEY)
+    const match = workspaces.value.find((w) => w.id === stored)
+    currentWorkspaceId.value = match
+      ? stored
+      : (workspaces.value[0]?.id ?? null)
+    if (currentWorkspaceId.value)
+      localStorage.setItem(LS_WORKSPACE_KEY, currentWorkspaceId.value)
+  }
+
+  const loadWorkspaces = async (orgId) => {
+    if (!orgId) {
+      workspaces.value = []
+      currentWorkspaceId.value = null
+      return
+    }
+    const { data, error: err } =
+      await workspacesService.getWorkspacesForOrg(orgId)
+    if (err) {
+      error.value = err.message
+      workspaces.value = []
+    } else {
+      workspaces.value = data ?? []
+      pickCurrentWorkspaceId()
+    }
+  }
+
   const loadMemberships = async () => {
     const auth = useAuthStore()
     if (!auth.isAuthed) {
       memberships.value = []
       currentOrgId.value = null
+      workspaces.value = []
+      currentWorkspaceId.value = null
       return
     }
     loading.value = true
@@ -58,6 +94,7 @@ export const useOrgStore = defineStore('org', () => {
       memberships.value = data ?? []
       pickCurrentOrgId()
     }
+    if (currentOrgId.value) await loadWorkspaces(currentOrgId.value)
     loading.value = false
   }
 
@@ -70,14 +107,48 @@ export const useOrgStore = defineStore('org', () => {
   const reset = () => {
     memberships.value = []
     currentOrgId.value = null
+    workspaces.value = []
+    currentWorkspaceId.value = null
     localStorage.removeItem(LS_KEY)
+    localStorage.removeItem(LS_WORKSPACE_KEY)
     initPromise = null
   }
 
-  const switchOrg = (orgId) => {
+  const switchOrg = async (orgId) => {
     if (!memberships.value.find((m) => m.organizations?.id === orgId)) return
     currentOrgId.value = orgId
     localStorage.setItem(LS_KEY, orgId)
+    await loadWorkspaces(orgId)
+  }
+
+  const switchWorkspace = (workspaceId) => {
+    if (!workspaces.value.find((w) => w.id === workspaceId)) return
+    currentWorkspaceId.value = workspaceId
+    localStorage.setItem(LS_WORKSPACE_KEY, workspaceId)
+  }
+
+  const createWorkspace = async ({ name }) => {
+    const orgId = currentOrgId.value
+    if (!orgId) {
+      const err = new Error('No current organization')
+      error.value = err.message
+      return { error: err }
+    }
+    loading.value = true
+    error.value = null
+    const { data, error: err } = await workspacesService.createWorkspace({
+      orgId,
+      name,
+    })
+    if (err) {
+      error.value = err.message
+      loading.value = false
+      return { error: err }
+    }
+    await loadWorkspaces(orgId)
+    if (data?.id) switchWorkspace(data.id)
+    loading.value = false
+    return { data }
   }
 
   const completeOnboarding = async ({ orgName, orgDomain }) => {
@@ -111,13 +182,19 @@ export const useOrgStore = defineStore('org', () => {
     currentOrg,
     currentMembership,
     currentRole,
+    workspaces,
+    currentWorkspaceId,
+    currentWorkspace,
     loading,
     error,
     isOnboarded,
     init,
     loadMemberships,
+    loadWorkspaces,
     reset,
     switchOrg,
+    switchWorkspace,
+    createWorkspace,
     completeOnboarding,
   }
 })
