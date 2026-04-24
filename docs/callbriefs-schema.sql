@@ -438,10 +438,6 @@ values (
   52428800,  -- 50 MB
   array[
     'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'image/png',
     'image/jpeg',
     'image/webp',

@@ -93,7 +93,7 @@ const dismissError = (i) => errors.value.splice(i, 1)
             <template v-else>Drop files or paste a link</template>
           </div>
           <div class="text-[12.5px] text-ink-500 mt-[3px]">
-            PDF, DOC, DOCX, PPT, PPTX, images · up to 50 MB each
+            PDF or images · up to 50 MB each
           </div>
         </div>
         <button
@@ -108,7 +108,7 @@ const dismissError = (i) => errors.value.splice(i, 1)
           ref="fileInput"
           type="file"
           multiple
-          accept=".pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg,.webp,.gif"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,.gif"
           class="hidden"
           @change="onFileInputChange"
         />

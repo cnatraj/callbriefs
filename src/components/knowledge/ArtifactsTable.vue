@@ -56,17 +56,11 @@ const view = ref("list");
 const FILTERS = [
   { key: "all", label: "All types" },
   { key: "pdf", label: "PDFs" },
-  { key: "deck", label: "Decks" },
-  { key: "doc", label: "Docs" },
   { key: "image", label: "Images" },
 ];
 
 const MIME_TO_KIND = {
   "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "doc",
-  "application/vnd.ms-powerpoint": "deck",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "deck",
   "image/png": "image",
   "image/jpeg": "image",
   "image/webp": "image",

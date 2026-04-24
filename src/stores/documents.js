@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useOrgStore } from './org'
 import * as documentsService from '@/services/documents'
 
+const NON_TERMINAL_STATUSES = new Set(['uploaded', 'processing'])
+const POLL_INTERVAL_MS = 2000
+
 let subscribed = false
+let pollTimer = null
 
 export const useDocumentsStore = defineStore('documents', () => {
   const documents = ref([])
@@ -96,10 +100,37 @@ export const useDocumentsStore = defineStore('documents', () => {
     error.value = null
   }
 
+  // Poll while any visible doc is in a non-terminal status
+  // (uploaded or processing). Driven by a computed flag; the watch
+  // starts/stops the timer automatically as statuses change.
+  const needsPolling = computed(() =>
+    documents.value.some((d) => NON_TERMINAL_STATUSES.has(d.status)),
+  )
+
+  const stopPolling = () => {
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  watch(needsPolling, (should) => {
+    if (should && !pollTimer) {
+      pollTimer = setInterval(() => {
+        if (loadedWorkspaceId.value) loadDocuments(loadedWorkspaceId.value)
+      }, POLL_INTERVAL_MS)
+    } else if (!should) {
+      stopPolling()
+    }
+  })
+
   if (!subscribed) {
     subscribed = true
     supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') reset()
+      if (event === 'SIGNED_OUT') {
+        stopPolling()
+        reset()
+      }
     })
   }
 

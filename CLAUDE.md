@@ -102,6 +102,8 @@ SQL files in [sql/](sql/) are named `<adjective>-<animal>.sql` — arbitrary cod
 10. `hopping-hare.sql` — documents: `file_size`/`mime_type` columns, INSERT policy, `documents` storage bucket (private, 50 MB, allowed MIME list) + storage RLS
 11. `prowling-cat.sql` — pins `documents.uploaded_by` to `auth.uid()` via column DEFAULT + policy WITH CHECK (prevents client from spoofing)
 12. `fading-owl.sql` — DELETE policy + grant on `documents` (owner/admin only, matching the storage.objects DELETE policy)
+13. `soaring-eagle.sql` — grants `service_role` full access to `public` schema so edge functions (starting with `process-document`) can read/write app tables
+14. `gliding-heron.sql` — narrows the `documents` storage bucket MIME types to PDF + images only (edge function doesn't handle docx/pptx)
 
 For a cold start against a fresh Supabase project, run [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — it's the consolidated final state.
 

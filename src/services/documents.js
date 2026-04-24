@@ -2,10 +2,6 @@ import { supabase } from '@/lib/supabase'
 
 export const ALLOWED_MIMES = [
   'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'image/png',
   'image/jpeg',
   'image/webp',
@@ -16,10 +12,6 @@ export const MAX_BYTES = 50 * 1024 * 1024 // 50 MB
 
 const MIME_TO_EXT = {
   'application/pdf': 'pdf',
-  'application/msword': 'doc',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-  'application/vnd.ms-powerpoint': 'ppt',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
@@ -66,7 +58,9 @@ export const uploadDocument = async ({ file, orgId, workspaceId }) => {
 
   if (uploadErr) return { data: null, error: uploadErr }
 
-  // uploaded_by is set server-side via the column DEFAULT auth.uid()
+  // uploaded_by is set server-side via the column DEFAULT auth.uid().
+  // status defaults to 'uploaded' — the indexing pipeline transitions
+  // it to 'processing' → 'ready' (or 'failed').
   const { data, error: insertErr } = await supabase
     .from('documents')
     .insert({
@@ -76,7 +70,6 @@ export const uploadDocument = async ({ file, orgId, workspaceId }) => {
       file_url: filePath,
       mime_type: file.type,
       file_size: file.size,
-      status: 'ready',
     })
     .select()
     .single()
