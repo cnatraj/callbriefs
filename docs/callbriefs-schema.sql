@@ -184,11 +184,17 @@ create policy "members can view their orgs"
     id in (select org_id from memberships where user_id = auth.uid())
   );
 
--- Users: can view self (teammate visibility will be added later via a
--- SECURITY DEFINER helper when the Users page needs it)
+-- Users: can view self (bootstrap case — user has no memberships yet
+-- so shares_org_with would return false)
 create policy "users can view own record"
   on users for select
   using (id = auth.uid());
+
+-- Users: can view teammates (people we share at least one org with).
+-- Uses a SECURITY DEFINER helper to avoid RLS recursion on memberships.
+create policy "users can view teammates"
+  on users for select
+  using (shares_org_with(id));
 
 -- Users: can update own record
 create policy "users can update own record"
@@ -369,6 +375,31 @@ end;
 $$;
 
 grant execute on function public.complete_onboarding(text, text) to authenticated;
+
+
+-- ========================
+-- HELPER: shares_org_with
+-- ========================
+-- SECURITY DEFINER helper used by the users "view teammates" policy to
+-- avoid RLS recursion — we need to read both sides of a memberships
+-- join, and the memberships policy restricts to the caller's rows.
+create or replace function public.shares_org_with(p_user_id uuid)
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists (
+    select 1
+      from public.memberships m1
+      join public.memberships m2 on m1.org_id = m2.org_id
+      where m1.user_id = auth.uid()
+        and m2.user_id = p_user_id
+  );
+$$;
+
+grant execute on function public.shares_org_with(uuid) to authenticated;
 
 
 -- Workspaces: owners and admins of the target org can insert.

@@ -28,18 +28,19 @@ export const getDocumentsForWorkspace = (workspaceId) =>
   supabase
     .from('documents')
     .select(
-      'id, workspace_id, name, file_url, mime_type, file_size, type, status, uploaded_by, created_at',
+      'id, workspace_id, name, file_url, mime_type, file_size, type, status, uploaded_by, extracted_content, created_at, uploader:uploaded_by(id, name, email)',
     )
     .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false })
 
 // Short-lived signed URL for reading/downloading a stored document.
-// If filename is provided, Content-Disposition is set so the download
-// saves as the original name instead of the storage path's basename.
-export const getSignedUrl = (filePath, filename) =>
+// Pass `download: filename` to force a download with that filename via
+// Content-Disposition; omit it to open the file inline in the browser
+// (PDFs and images render in a new tab).
+export const getSignedUrl = (filePath, { download } = {}) =>
   supabase.storage
     .from('documents')
-    .createSignedUrl(filePath, 60, filename ? { download: filename } : undefined)
+    .createSignedUrl(filePath, 60, download ? { download } : undefined)
 
 // Upload: put the file in storage under {org_id}/{workspace_id}/{uuid}.{ext},
 // then insert a documents row. On DB failure, best-effort delete the

@@ -11,9 +11,12 @@ import {
 } from "@/components/icons";
 import { useDocumentsStore } from "@/stores/documents";
 import { useCan } from "@/composables/useCan";
+import { useArtifactDrawer } from "@/composables/useArtifactDrawer";
+import { profileDisplayName, profileInitials } from "@/utils/profile";
 
 const documents = useDocumentsStore();
 const can = useCan();
+const artifactDrawer = useArtifactDrawer();
 
 const openMenuId = ref(null);
 
@@ -100,9 +103,9 @@ const formatDate = (iso) => {
 const shortId = (id) => (id ? id.slice(0, 8) : "");
 
 const GRID =
-  "minmax(0,2.4fr) minmax(0,0.7fr) minmax(0,1fr) minmax(0,0.9fr) 40px";
+  "minmax(0,2.2fr) minmax(0,0.7fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.9fr) 40px";
 
-const onRowClick = (doc) => documents.openSignedUrl(doc);
+const onRowClick = (doc) => artifactDrawer.open(doc.id);
 </script>
 
 <template>
@@ -180,6 +183,7 @@ const onRowClick = (doc) => documents.openSignedUrl(doc);
       >
         <div>Artifact</div>
         <div>Size</div>
+        <div>Uploader</div>
         <div>Uploaded</div>
         <div>Status</div>
         <div></div>
@@ -227,6 +231,18 @@ const onRowClick = (doc) => documents.openSignedUrl(doc);
         <!-- Size -->
         <div class="mono text-[12.5px] text-ink-700">
           {{ formatBytes(d.file_size) }}
+        </div>
+
+        <!-- Uploader -->
+        <div class="flex items-center gap-2 min-w-0 text-ink-700">
+          <div
+            class="w-[22px] h-[22px] grid place-items-center rounded-full border border-ink-150 bg-ink-100 text-ink-700 text-[10px] font-semibold shrink-0"
+          >
+            {{ profileInitials(d.uploader) }}
+          </div>
+          <span class="truncate text-[12.5px]">
+            {{ profileDisplayName(d.uploader) ?? "—" }}
+          </span>
         </div>
 
         <!-- Uploaded -->

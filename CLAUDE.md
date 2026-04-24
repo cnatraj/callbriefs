@@ -2,6 +2,11 @@
 
 B2B SaaS for sales reps. Turns a call transcript or recording into a personalized prospect-facing microsite ("brief") — with the prospect's priorities, next steps, and relevant collateral pulled from a shared Knowledge library. Mobile-first, sent to the buyer as a private link after a discovery call.
 
+## Working style
+
+- **Plan before implementing.** For any non-trivial task (more than a single obvious edit), propose the plan first — files to touch, approach, tradeoffs — and wait for a go-ahead. Exceptions: one-line fixes, explicit "next stage" / "just do it" instructions, and follow-on steps already pre-authorized.
+- **Short sentences.** Prefer scannable bullets and terse prose over long explanations. Drop hedging.
+
 ## Quick reference
 
 **Stack:** Vue 3 (`<script setup>`), Pinia, Vue Router 4, Vite, Tailwind. Supabase for auth + Postgres + edge functions. Anthropic API called from Supabase Edge Functions (never from the frontend).
@@ -89,21 +94,7 @@ Both `init()`s cache a shared promise so repeat calls are cheap. The first navig
 
 SQL files in [sql/](sql/) are named `<adjective>-<animal>.sql` — arbitrary codenames so filenames don't collide. Each wraps `begin; … commit;`. Applied in order via the Supabase SQL Editor.
 
-**Applied so far (for reference, not to re-run blindly):**
-1. `wandering-otter.sql` — multi-tenant refactor (drop `users.org_id`, create `memberships`, rewrite RLS)
-2. `humming-sparrow.sql` — trigger to auto-create `public.users` on auth signup
-3. `curious-badger.sql` — `complete_onboarding` RPC
-4. `quiet-heron.sql` — fix recursive RLS on `memberships`
-5. `racing-fox.sql` — `GRANT SELECT` on memberships to `authenticated`
-6. `galloping-deer.sql` — grants across all public tables + default privileges for future tables
-7. `climbing-goat.sql` — extends `complete_onboarding` to also create a default Sales workspace
-8. `roaming-lynx.sql` — `create_workspace` RPC (owner/admin-only, called from the Create Workspace drawer)
-9. `dancing-falcon.sql` — replaces the `create_workspace` RPC with an INSERT policy + grant (simpler pattern for single-table inserts)
-10. `hopping-hare.sql` — documents: `file_size`/`mime_type` columns, INSERT policy, `documents` storage bucket (private, 50 MB, allowed MIME list) + storage RLS
-11. `prowling-cat.sql` — pins `documents.uploaded_by` to `auth.uid()` via column DEFAULT + policy WITH CHECK (prevents client from spoofing)
-12. `fading-owl.sql` — DELETE policy + grant on `documents` (owner/admin only, matching the storage.objects DELETE policy)
-13. `soaring-eagle.sql` — grants `service_role` full access to `public` schema so edge functions (starting with `process-document`) can read/write app tables
-14. `gliding-heron.sql` — narrows the `documents` storage bucket MIME types to PDF + images only (edge function doesn't handle docx/pptx)
+Migration log lives in [sql/README.md](sql/README.md) — newest on top.
 
 For a cold start against a fresh Supabase project, run [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — it's the consolidated final state.
 

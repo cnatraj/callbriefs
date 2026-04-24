@@ -83,9 +83,19 @@ export const useDocumentsStore = defineStore('documents', () => {
 
   const openSignedUrl = async (doc) => {
     if (!doc?.file_url) return
+    const { data, error: err } = await documentsService.getSignedUrl(doc.file_url)
+    if (err) {
+      error.value = err.message
+      return
+    }
+    window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const downloadDocument = async (doc) => {
+    if (!doc?.file_url) return
     const { data, error: err } = await documentsService.getSignedUrl(
       doc.file_url,
-      doc.name,
+      { download: doc.name },
     )
     if (err) {
       error.value = err.message
@@ -143,6 +153,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     uploadDocument,
     deleteDocument,
     openSignedUrl,
+    downloadDocument,
     reset,
   }
 })

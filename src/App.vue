@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import NewBriefModal from '@/components/NewBriefModal.vue'
 import CreateWorkspaceDrawer from '@/components/workspaces/CreateWorkspaceDrawer.vue'
+import ArtifactDrawer from '@/components/knowledge/ArtifactDrawer.vue'
 import { pages } from '@/router'
 
 const route = useRoute()
@@ -18,4 +19,5 @@ const isBareLayout = computed(() => !!route.meta?.layout)
   </AppShell>
   <NewBriefModal v-if="!isBareLayout" />
   <CreateWorkspaceDrawer v-if="!isBareLayout" />
+  <ArtifactDrawer v-if="!isBareLayout" />
 </template>
