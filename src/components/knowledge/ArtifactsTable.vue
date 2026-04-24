@@ -1,6 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
-import { ARTIFACTS } from "@/data/artifacts";
+import { ref, computed, onBeforeUnmount, onMounted } from "vue";
 import FileKindBadge from "./FileKindBadge.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import {
@@ -10,6 +9,46 @@ import {
   IconList,
   IconGrid,
 } from "@/components/icons";
+import { useDocumentsStore } from "@/stores/documents";
+import { useCan } from "@/composables/useCan";
+
+const documents = useDocumentsStore();
+const can = useCan();
+
+const openMenuId = ref(null);
+
+const toggleMenu = (id) => {
+  openMenuId.value = openMenuId.value === id ? null : id;
+};
+const closeMenu = () => (openMenuId.value = null);
+
+const onDelete = async (doc) => {
+  closeMenu();
+  if (
+    !window.confirm(
+      `Delete "${doc.name}"? This removes the file and can't be undone.`,
+    )
+  )
+    return;
+  await documents.deleteDocument(doc);
+};
+
+const onDocClick = (e) => {
+  if (!openMenuId.value) return;
+  if (!e.target.closest?.("[data-row-menu]")) closeMenu();
+};
+const onEsc = (e) => {
+  if (e.key === "Escape") closeMenu();
+};
+
+onMounted(() => {
+  document.addEventListener("mousedown", onDocClick);
+  document.addEventListener("keydown", onEsc);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener("mousedown", onDocClick);
+  document.removeEventListener("keydown", onEsc);
+});
 
 const filter = ref("all");
 const view = ref("list");
@@ -18,28 +57,58 @@ const FILTERS = [
   { key: "all", label: "All types" },
   { key: "pdf", label: "PDFs" },
   { key: "deck", label: "Decks" },
-  { key: "video", label: "Video & audio" },
-  { key: "doc", label: "Docs & sheets" },
+  { key: "doc", label: "Docs" },
+  { key: "image", label: "Images" },
 ];
 
-const rows = computed(() =>
-  ARTIFACTS.filter((a) => {
-    if (filter.value === "all") return true;
-    if (filter.value === "video")
-      return a.kind === "video" || a.kind === "audio";
-    if (filter.value === "doc") return a.kind === "doc" || a.kind === "sheet";
-    return a.kind === filter.value;
-  }),
-);
+const MIME_TO_KIND = {
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "doc",
+  "application/vnd.ms-powerpoint": "deck",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation": "deck",
+  "image/png": "image",
+  "image/jpeg": "image",
+  "image/webp": "image",
+  "image/gif": "image",
+};
+
+const kindOf = (mime) => MIME_TO_KIND[mime] ?? "other";
+
+const rows = computed(() => {
+  const all = documents.documents.map((d) => ({ ...d, kind: kindOf(d.mime_type) }));
+  if (filter.value === "all") return all;
+  return all.filter((d) => d.kind === filter.value);
+});
+
+const formatBytes = (bytes) => {
+  if (!bytes || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const pad = (n) => String(n).padStart(2, "0");
+const timeOf = (d) => `${d.getHours()}:${pad(d.getMinutes())}`;
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return `Today, ${timeOf(d)}`;
+  const y = new Date(now);
+  y.setDate(y.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return `Yesterday, ${timeOf(d)}`;
+  const opts = { month: "short", day: "numeric" };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
+  return d.toLocaleDateString("en-US", opts);
+};
+
+const shortId = (id) => (id ? id.slice(0, 8) : "");
 
 const GRID =
-  "36px minmax(0,2.4fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,0.9fr) minmax(0,1fr) 40px";
+  "minmax(0,2.4fr) minmax(0,0.7fr) minmax(0,1fr) minmax(0,0.9fr) 40px";
 
-const initials = (name) =>
-  name
-    .split(" ")
-    .map((s) => s[0])
-    .join("");
+const onRowClick = (doc) => documents.openSignedUrl(doc);
 </script>
 
 <template>
@@ -115,90 +184,87 @@ const initials = (name) =>
         class="grid items-center px-[18px] py-[10px] bg-bg border-b border-ink-150 eyebrow"
         :style="{ gridTemplateColumns: GRID }"
       >
-        <div></div>
         <div>Artifact</div>
-        <div>Tags</div>
-        <div>Owner · Updated</div>
-        <div>Used in</div>
+        <div>Size</div>
+        <div>Uploaded</div>
         <div>Status</div>
         <div></div>
       </div>
 
+      <!-- Loading -->
+      <div
+        v-if="documents.loading && rows.length === 0"
+        class="px-[18px] py-10 text-center text-[13px] text-ink-500"
+      >
+        Loading…
+      </div>
+
+      <!-- Empty -->
+      <div
+        v-else-if="rows.length === 0"
+        class="px-[18px] py-10 text-center text-[13px] text-ink-500"
+      >
+        {{
+          filter === "all"
+            ? "No artifacts in this workspace yet. Drop a file above to get started."
+            : "No artifacts match that filter."
+        }}
+      </div>
+
       <!-- Rows -->
       <div
-        v-for="a in rows"
-        :key="a.id"
+        v-for="d in rows"
+        :key="d.id"
         class="grid items-center px-[18px] py-3 border-b border-ink-100 cursor-pointer hover:bg-ink-100 transition-colors"
         :style="{ gridTemplateColumns: GRID }"
+        @click="onRowClick(d)"
       >
-        <!-- Checkbox -->
-        <div>
-          <div
-            class="w-4 h-4 rounded bg-surface"
-            style="border: 1.5px solid var(--ink-200)"
-          />
-        </div>
-
         <!-- Artifact name -->
         <div class="flex items-center gap-3 min-w-0">
-          <FileKindBadge :kind="a.kind" />
+          <FileKindBadge :kind="d.kind" />
           <div class="min-w-0">
-            <div class="font-medium text-ink-900 truncate">{{ a.name }}</div>
-            <div class="flex gap-2 mt-[2px] text-[12px] text-ink-500">
-              <span class="mono">{{ a.id }}</span>
-              <span>·</span>
-              <span>{{ a.size }}</span>
+            <div class="font-medium text-ink-900 truncate">{{ d.name }}</div>
+            <div class="mono text-[12px] text-ink-500 mt-[2px]">
+              {{ shortId(d.id) }}
             </div>
           </div>
         </div>
 
-        <!-- Tags -->
-        <div class="flex flex-wrap gap-1">
-          <span
-            v-for="t in a.tags.slice(0, 2)"
-            :key="t"
-            class="mono text-[11px] px-[7px] py-[2px] rounded bg-ink-100 text-ink-700"
-          >
-            #{{ t }}
-          </span>
+        <!-- Size -->
+        <div class="mono text-[12.5px] text-ink-700">
+          {{ formatBytes(d.file_size) }}
         </div>
 
-        <!-- Owner -->
-        <div class="flex items-center gap-2 text-ink-700 min-w-0">
-          <div
-            class="w-[22px] h-[22px] grid place-items-center rounded-full border border-ink-150 bg-ink-100 text-ink-700 text-[10px] font-semibold"
-          >
-            {{ initials(a.owner) }}
-          </div>
-          <div class="min-w-0">
-            <div class="font-medium text-ink-900 text-[13px]">
-              {{ a.owner }}
-            </div>
-            <div class="text-[12px] text-ink-500">{{ a.updated }}</div>
-          </div>
-        </div>
-
-        <!-- Usage -->
-        <div class="flex items-center gap-2">
-          <span class="mono text-[12px] text-ink-700 w-7">{{ a.usage }}</span>
-          <div class="flex-1 h-1 bg-ink-100 rounded relative overflow-hidden">
-            <div
-              class="absolute inset-0 bg-ink-700"
-              :style="{ width: `${Math.min(100, a.usage * 0.8)}%` }"
-            />
-          </div>
-        </div>
+        <!-- Uploaded -->
+        <div class="text-ink-700 text-[13px]">{{ formatDate(d.created_at) }}</div>
 
         <!-- Status -->
         <div>
-          <StatusPill :status="a.status" :pct="a.pct" />
+          <StatusPill :status="d.status" />
         </div>
 
         <!-- Row action -->
-        <div class="flex justify-end">
-          <button class="text-ink-700 cursor-pointer bg-transparent border-0">
+        <div class="flex justify-end relative" data-row-menu>
+          <button
+            v-if="can('document.delete')"
+            class="text-ink-700 cursor-pointer bg-transparent border-0 p-1 rounded-[5px] hover:bg-ink-100"
+            @click.stop="toggleMenu(d.id)"
+          >
             <IconMore :size="15" />
           </button>
+          <div
+            v-if="openMenuId === d.id"
+            class="absolute right-0 top-full mt-1 w-[160px] bg-surface border border-ink-150 rounded-[10px] shadow-panel py-1 z-10"
+            role="menu"
+          >
+            <button
+              role="menuitem"
+              class="w-full text-left px-3 py-[8px] text-[13px] text-danger hover:bg-ink-100 bg-transparent border-0 cursor-pointer"
+              @click.stop="onDelete(d)"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>

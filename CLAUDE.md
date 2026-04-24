@@ -99,6 +99,9 @@ SQL files in [sql/](sql/) are named `<adjective>-<animal>.sql` — arbitrary cod
 7. `climbing-goat.sql` — extends `complete_onboarding` to also create a default Sales workspace
 8. `roaming-lynx.sql` — `create_workspace` RPC (owner/admin-only, called from the Create Workspace drawer)
 9. `dancing-falcon.sql` — replaces the `create_workspace` RPC with an INSERT policy + grant (simpler pattern for single-table inserts)
+10. `hopping-hare.sql` — documents: `file_size`/`mime_type` columns, INSERT policy, `documents` storage bucket (private, 50 MB, allowed MIME list) + storage RLS
+11. `prowling-cat.sql` — pins `documents.uploaded_by` to `auth.uid()` via column DEFAULT + policy WITH CHECK (prevents client from spoofing)
+12. `fading-owl.sql` — DELETE policy + grant on `documents` (owner/admin only, matching the storage.objects DELETE policy)
 
 For a cold start against a fresh Supabase project, run [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — it's the consolidated final state.
 

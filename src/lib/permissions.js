@@ -12,12 +12,14 @@ const BY_ROLE = {
     'member.change-role',
     'org.settings',
     'org.delete',
+    'document.delete',
   ],
   admin: [
     'workspace.create',
     'workspace.settings',
     'member.invite',
     'member.remove',
+    'document.delete',
   ],
   member: [],
 }

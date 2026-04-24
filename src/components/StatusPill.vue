@@ -43,6 +43,24 @@ const STATUS_MAP = {
     bg: 'color-mix(in oklch, var(--warn) 18%, white 82%)',
     ink: 'color-mix(in oklch, var(--warn) 60%, black 40%)',
   },
+  ready: {
+    label: 'Ready',
+    dot: 'var(--ok)',
+    bg: 'color-mix(in oklch, var(--ok) 12%, white 88%)',
+    ink: 'color-mix(in oklch, var(--ok) 70%, black 30%)',
+  },
+  uploaded: {
+    label: 'Uploaded',
+    dot: 'var(--ink-400)',
+    bg: 'var(--ink-100)',
+    ink: 'var(--ink-700)',
+  },
+  failed: {
+    label: 'Failed',
+    dot: 'var(--danger)',
+    bg: 'color-mix(in oklch, var(--danger) 12%, white 88%)',
+    ink: 'color-mix(in oklch, var(--danger) 65%, black 35%)',
+  },
 }
 
 const meta = computed(() => STATUS_MAP[props.status] || STATUS_MAP.draft)

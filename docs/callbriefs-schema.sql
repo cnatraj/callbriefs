@@ -83,10 +83,12 @@ create table documents (
   workspace_id        uuid not null references workspaces(id) on delete cascade,
   name                text not null,
   file_url            text,
+  mime_type           text,
+  file_size           bigint,
   type                text check (type in ('pitch_deck', 'one_pager', 'case_study', 'battlecard', 'other')),
   status              text not null default 'uploaded' check (status in ('uploaded', 'processing', 'ready', 'failed')),
   extracted_content   jsonb,
-  uploaded_by         uuid references users(id) on delete set null,
+  uploaded_by         uuid default auth.uid() references users(id) on delete set null,
   created_at          timestamp with time zone default now()
 );
 
@@ -386,3 +388,102 @@ create policy "owners and admins can create workspaces"
   );
 
 grant insert on table public.workspaces to authenticated;
+
+
+-- Documents: any org member can insert into a workspace in their org.
+-- uploaded_by is pinned to auth.uid() — the column DEFAULT sets it
+-- automatically, and the WITH CHECK rejects any other value.
+create policy "members can add documents"
+  on documents for insert
+  with check (
+    uploaded_by = auth.uid()
+    and exists (
+      select 1
+        from workspaces w
+        join memberships m on m.org_id = w.org_id
+        where w.id = documents.workspace_id
+          and m.user_id = auth.uid()
+    )
+  );
+
+grant insert on table public.documents to authenticated;
+
+-- Documents: owners and admins can delete.
+create policy "owners and admins can delete documents"
+  on documents for delete
+  using (
+    exists (
+      select 1
+        from workspaces w
+        join memberships m on m.org_id = w.org_id
+        where w.id = documents.workspace_id
+          and m.user_id = auth.uid()
+          and m.role in ('owner', 'admin')
+    )
+  );
+
+grant delete on table public.documents to authenticated;
+
+
+-- ========================
+-- STORAGE: documents bucket
+-- ========================
+-- Private bucket for uploaded artifacts. 50 MB cap, specific MIME list.
+-- Path convention: {org_id}/{workspace_id}/{uuid}.{ext}
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'documents',
+  'documents',
+  false,
+  52428800,  -- 50 MB
+  array[
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/gif'
+  ]
+)
+on conflict (id) do update
+  set public             = excluded.public,
+      file_size_limit    = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+
+-- Storage RLS on storage.objects. First path segment = org_id; used to
+-- scope read/write/delete to members of that org.
+create policy "org members can upload documents"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1]::uuid in (
+      select m.org_id from memberships m where m.user_id = auth.uid()
+    )
+  );
+
+create policy "org members can read documents"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1]::uuid in (
+      select m.org_id from memberships m where m.user_id = auth.uid()
+    )
+  );
+
+create policy "owners and admins can delete documents"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1]::uuid in (
+      select m.org_id from memberships m
+        where m.user_id = auth.uid()
+          and m.role in ('owner', 'admin')
+    )
+  );
