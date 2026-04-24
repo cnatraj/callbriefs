@@ -61,6 +61,8 @@ Follow-up items flagged during development. Not blockers — things worth revisi
 
 ## Deferred features (explicitly paused)
 
+- **MVP artifact cap: 5 per workspace (client-side).** Cap upload count at 5 artifacts per workspace while the extraction pipeline runs full-document content into the LLM context — any more than that and we'll hit token limits. Implementation: export `MAX_ARTIFACTS_PER_WORKSPACE = 5` from [src/services/documents.js](src/services/documents.js); in [src/components/knowledge/UploadRow.vue](src/components/knowledge/UploadRow.vue) compute `remainingSlots`, disable the drop zone + Upload button when full, and reject drops that would exceed the cap with a clear inline error. Client-side only for MVP — when we want higher caps we'll need RAG + embeddings + chunking, at which point server-side enforcement also lands.
+
 - **Onboarding checklist.** Discussed and paused. See previous conversation — spec is written but no code. File to create: `src/data/checklistSteps.js` + `src/stores/checklist.js` + wire into `OnboardingBanner.vue` on the dashboard.
 
 - **Invite flow.** Schema + plan discussed but not built. Needs:
