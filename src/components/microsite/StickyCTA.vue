@@ -1,6 +1,15 @@
 <script setup>
+import { computed } from 'vue'
 import { MICROSITE } from '@/data/microsite'
 import { IconCalendar, IconArrowRight } from '@/components/icons'
+
+const props = defineProps({
+  briefOwner: { type: Object, default: null },
+})
+
+const ownerName = computed(
+  () => props.briefOwner?.name ?? MICROSITE.rep.name,
+)
 </script>
 
 <template>
@@ -22,7 +31,7 @@ import { IconCalendar, IconArrowRight } from '@/components/icons'
         class="text-[11px] text-ink-500 leading-[1.2]"
         style="white-space: nowrap"
       >
-        with {{ MICROSITE.rep.name }}
+        with {{ ownerName }}
       </div>
       <div
         class="text-[13px] font-medium text-ink-900 leading-[1.25] mt-[2px]"

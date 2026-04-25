@@ -160,6 +160,44 @@ Deno.serve(async (req) => {
       content = JSON.parse(cleaned);
     }
 
+    // Denormalize the brief owner (call.created_by) and the vendor org name
+    // into content. The microsite is publicly readable, but public.users
+    // and public.organizations are NOT readable by anon — so we snapshot
+    // these at generation time. Also freezes attribution if the rep leaves
+    // or the org is renamed.
+    if (call.created_by) {
+      const { data: owner } = await supabase
+        .from("users")
+        .select("id, name, email")
+        .eq("id", call.created_by)
+        .maybeSingle();
+      if (owner) {
+        const parts = (owner.name ?? "").trim().split(/\s+/).filter(Boolean);
+        const initials = (
+          (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")
+        ).toUpperCase();
+        // deno-lint-ignore no-explicit-any
+        (content as any).brief_owner = {
+          id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          initials,
+        };
+      }
+    }
+
+    if (call.org_id) {
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("name")
+        .eq("id", call.org_id)
+        .maybeSingle();
+      if (org) {
+        // deno-lint-ignore no-explicit-any
+        (content as any).org = { name: org.name };
+      }
+    }
+
     // Upsert microsite — retry path may already have a row for this call.
     const { data: existing } = await supabase
       .from("microsites")

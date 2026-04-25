@@ -1,7 +1,88 @@
 <script setup>
-import SectionHeader from './SectionHeader.vue'
-import { MICROSITE } from '@/data/microsite'
-import { IconCheck } from '@/components/icons'
+import { computed } from "vue";
+import SectionHeader from "./SectionHeader.vue";
+import { MICROSITE } from "@/data/microsite";
+import { IconCheck } from "@/components/icons";
+
+const props = defineProps({
+  content: { type: Object, default: null },
+});
+
+const pad2 = (i) => String(i + 1).padStart(2, "0");
+
+// Section 01 — map content.challenges into the template's {mark, quote, attrib}
+// shape. mark is derived from index; severity goes in the attrib slot until
+// we restyle that line.
+const heard = computed(() => {
+  const list = props.content?.challenges;
+  if (!list?.length) return MICROSITE.heard;
+  return list.map((c, i) => ({
+    mark: pad2(i),
+    quote: c.challenge,
+    attrib: c.severity ? `Severity · ${c.severity}` : "",
+  }));
+});
+
+const toolsUsed = computed(() => props.content?.tools_used ?? []);
+
+const company = computed(
+  () => props.content?.participants?.prospect?.company ?? "Fieldstone",
+);
+
+// Section 02 — map content.solutions into the template's {tag, title, body}
+// shape. tag is derived from index ("PROBLEM 01", "PROBLEM 02", ...).
+const solutions = computed(() => {
+  const list = props.content?.solutions;
+  if (!list?.length) return MICROSITE.solutions;
+  return list.map((s, i) => ({
+    title: s.header,
+    body: s.text,
+  }));
+});
+
+// Section 03 — map content.projected_impact into the template's
+// {label, value} shape.
+const metrics = computed(() => {
+  const list = props.content?.projected_impact;
+  if (!list?.length) return MICROSITE.metrics;
+  return list.map((m) => ({
+    label: m.metric,
+    value: m.number,
+  }));
+});
+
+// Section 04 — map content.what_we_need_to_align_on into the template's
+// {n, title, status, meta} shape. Always prepends the discovery call as
+// a completed step at index 0; remaining items are 'todo'.
+const formatCallDate = (val) => {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return val;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const nextSteps = computed(() => {
+  const list = props.content?.what_we_need_to_align_on;
+  if (!list?.length) return MICROSITE.nextSteps;
+  const callDate = formatCallDate(props.content?.meta?.call_date);
+  const items = [
+    {
+      title: "Our discovery + requirements call",
+      status: "done",
+      meta: callDate ? `Completed on ${callDate}` : "",
+    },
+    ...list.map((title) => ({ title, status: "todo", meta: "" })),
+  ];
+  return items.map((item, i) => ({
+    n: pad2(i),
+    title: item.title,
+    status: item.status,
+    meta: item.meta,
+  }));
+});
 </script>
 
 <template>
@@ -10,7 +91,7 @@ import { IconCheck } from '@/components/icons'
     <SectionHeader num="01" label="What we heard" />
     <div class="flex flex-col gap-[10px]">
       <div
-        v-for="h in MICROSITE.heard"
+        v-for="h in heard"
         :key="h.mark"
         class="flex gap-3 p-[14px] border border-ink-150 rounded-[12px] bg-surface"
       >
@@ -32,24 +113,29 @@ import { IconCheck } from '@/components/icons'
     </div>
   </section>
 
+  <!-- Tool stack -->
+  <!-- <section v-if="toolsUsed.length">
+    <div class="eyebrow mb-[10px]">Currently using</div>
+    <div class="flex flex-wrap gap-[6px]">
+      <span
+        v-for="tool in toolsUsed"
+        :key="tool"
+        class="inline-flex items-center px-[10px] py-[5px] rounded-sm bg-nav-bg border border-ink-100 text-ink-700 text-[12.5px] font-medium"
+      >
+        {{ tool }}
+      </span>
+    </div>
+  </section> -->
+
   <!-- 02 Solutions -->
   <section>
     <SectionHeader num="02" label="How we’d solve it" />
     <div class="flex flex-col">
       <div
-        v-for="s in MICROSITE.solutions"
+        v-for="s in solutions"
         :key="s.tag"
         class="py-4 border-t border-ink-100 flex flex-col gap-[10px]"
       >
-        <div class="flex items-center gap-2 text-[11.5px] text-ink-500">
-          <span
-            class="mono text-[11px] text-ink-700 px-2 py-[2px] bg-nav-bg border border-ink-150 rounded-full"
-          >
-            {{ s.tag }}
-          </span>
-          <span class="text-ink-400">→</span>
-          <span>GTR approach</span>
-        </div>
         <div
           class="text-[15px] font-semibold text-ink-900 leading-[1.3]"
           style="letter-spacing: -0.015em"
@@ -65,10 +151,10 @@ import { IconCheck } from '@/components/icons'
 
   <!-- 03 Metrics -->
   <section>
-    <SectionHeader num="03" label="Projected impact · for Fieldstone" />
+    <SectionHeader num="03" :label="`Projected impact for ${company}`" />
     <div class="flex flex-col gap-[10px]">
       <div
-        v-for="m in MICROSITE.metrics"
+        v-for="m in metrics"
         :key="m.label"
         class="flex items-center justify-between gap-[14px] p-[18px] border border-ink-150 rounded-[12px] bg-surface"
       >
@@ -102,7 +188,7 @@ import { IconCheck } from '@/components/icons'
     <SectionHeader num="04" label="Next steps" />
     <div class="flex flex-col">
       <div
-        v-for="s in MICROSITE.nextSteps"
+        v-for="s in nextSteps"
         :key="s.n"
         class="flex items-start gap-[14px] py-4 border-t border-ink-100"
       >
@@ -125,12 +211,13 @@ import { IconCheck } from '@/components/icons'
           <template v-else>{{ s.n }}</template>
         </div>
         <div class="min-w-0 flex-1">
-          <div
-            class="text-[14.5px] font-medium text-ink-900 leading-[1.4]"
-          >
+          <div class="font-medium text-ink-900 leading-[1.4]">
             {{ s.title }}
           </div>
-          <div class="text-[12px] text-ink-500 leading-[1.4] mt-[6px]">
+          <div
+            v-if="s.meta"
+            class="text-[12px] text-ink-500 leading-[1.4] mt-[6px]"
+          >
             {{ s.meta }}
           </div>
         </div>

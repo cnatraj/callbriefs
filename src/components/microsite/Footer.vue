@@ -1,5 +1,14 @@
 <script setup>
-import { MICROSITE } from '@/data/microsite'
+import { computed } from "vue";
+import { MICROSITE } from "@/data/microsite";
+
+const props = defineProps({
+  participants: { type: Object, default: null },
+  slug: { type: String, default: null },
+});
+
+const company = computed(() => props.participants?.prospect?.company ?? "");
+const briefId = computed(() => props.slug ?? MICROSITE.briefId);
 </script>
 
 <template>
@@ -11,11 +20,9 @@ import { MICROSITE } from '@/data/microsite'
       class="text-[17px] font-semibold text-ink-900"
       style="letter-spacing: -0.02em"
     >
-      Fieldstone Labs
+      {{ company }}
     </div>
-    <div class="mono text-[11.5px] text-ink-500">
-      BRIEF · {{ MICROSITE.briefId }} · expires {{ MICROSITE.expiresOn }}
-    </div>
+    <div class="mono text-[11.5px] text-ink-500">BRIEF · {{ briefId }}</div>
     <div
       class="mt-[10px] text-[11px] text-ink-400 inline-flex items-center gap-[6px]"
     >

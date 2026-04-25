@@ -85,7 +85,8 @@ No preamble. No trailing commentary.
   },
   "meta": {
     "call_min": 32,                        // null if not derivable from transcript
-    "turns": 147                           // null if not derivable
+    "turns": 147,
+    "call_date": "Human readable format. eg: April 14"                           // null if not derivable
   },
   "header": {
     "title": "<vendor> for <prospect company>",
