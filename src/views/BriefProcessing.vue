@@ -1,5 +1,12 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import { useRouter } from "vue-router";
 import { IconSparkle, IconCheck, IconArrowRight } from "@/components/icons";
 
@@ -77,6 +84,38 @@ const openMicrosite = () => {
   router.push(`/m/${brief.micrositeId}`);
 };
 const goBriefs = () => router.push("/briefs");
+
+// Floating active-row highlight — measures the active li and slides between rows
+const liRefs = ref([]);
+const setLiRef = (el, i) => {
+  if (el) liRefs.value[i] = el;
+};
+const highlight = ref({ top: 0, height: 0, visible: false });
+
+const updateHighlight = () => {
+  if (isComplete.value) {
+    highlight.value = { ...highlight.value, visible: false };
+    return;
+  }
+  const el = liRefs.value[activeIndex.value];
+  if (!el) return;
+  highlight.value = {
+    top: el.offsetTop,
+    height: el.offsetHeight,
+    visible: true,
+  };
+};
+
+watch([activeIndex, isComplete], () => nextTick(updateHighlight), {
+  immediate: true,
+});
+
+const onResize = () => updateHighlight();
+onMounted(() => {
+  nextTick(updateHighlight);
+  window.addEventListener("resize", onResize);
+});
+onBeforeUnmount(() => window.removeEventListener("resize", onResize));
 </script>
 
 <template>
@@ -196,30 +235,49 @@ const goBriefs = () => router.push("/briefs");
             </div>
           </div>
 
-          <ol class="mt-[22px] flex flex-col gap-[6px]">
+          <ol class="relative mt-[22px] flex flex-col gap-[6px] isolate">
+            <!-- Floating active highlight -->
+            <div
+              class="absolute rounded-[12px] bg-accent-tint pointer-events-none z-0"
+              style="
+                left: -10px;
+                right: -10px;
+                top: 0;
+                transition:
+                  transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
+                  height 480ms cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 240ms ease;
+                will-change: transform, height;
+              "
+              :style="{
+                transform: `translateY(${highlight.top}px)`,
+                height: `${highlight.height}px`,
+                opacity: highlight.visible ? 1 : 0,
+              }"
+            />
             <li
               v-for="(stage, i) in stages"
               :key="stage.title"
-              class="flex items-start gap-[14px] rounded-[12px] px-[10px] py-[10px] -mx-[10px] transition-colors"
-              :class="stageState(i) === 'active' ? 'bg-accent-tint' : ''"
+              :ref="(el) => setLiRef(el, i)"
+              class="relative z-10 flex items-start gap-[14px] rounded-[12px] px-[10px] py-[10px] -mx-[10px]"
             >
               <!-- Indicator -->
               <span class="shrink-0 mt-[1px] grid place-items-center">
                 <!-- DONE -->
                 <span
                   v-if="stageState(i) === 'done'"
-                  class="w-[20px] h-[20px] rounded-full grid place-items-center bg-accent text-accent-ink border border-accent-strong"
+                  class="w-[18px] h-[18px] rounded-full grid place-items-center bg-accent text-accent-ink border border-accent-strong"
                 >
-                  <IconCheck :size="12" :sw="2.4" />
+                  <IconCheck :size="11" :sw="2.4" />
                 </span>
 
                 <!-- ACTIVE: empty inner circle + rotating ring -->
                 <span
                   v-else-if="stageState(i) === 'active'"
-                  class="relative w-[20px] h-[20px] grid place-items-center"
+                  class="relative w-[23px] h-[23px] grid place-items-center"
                 >
                   <span
-                    class="w-[14px] h-[14px] rounded-full bg-surface border border-accent-strong"
+                    class="w-[18px] h-[18px] rounded-full bg-surface border border-accent-strong"
                   />
                   <span
                     class="absolute inset-0 rounded-full border-[1.5px] border-transparent spinner-arc"
@@ -229,7 +287,7 @@ const goBriefs = () => router.push("/briefs");
                 <!-- PENDING -->
                 <span
                   v-else
-                  class="w-[20px] h-[20px] rounded-full bg-surface border border-ink-300"
+                  class="w-[18px] h-[18px] rounded-full bg-surface border border-ink-300"
                 />
               </span>
 
@@ -238,8 +296,12 @@ const goBriefs = () => router.push("/briefs");
                   class="text-[15px]"
                   style="letter-spacing: -0.01em"
                   :class="[
-                    stageState(i) === 'active' ? 'font-semibold' : 'font-normal',
-                    stageState(i) === 'pending' ? 'text-ink-400' : 'text-ink-900',
+                    stageState(i) === 'active'
+                      ? 'font-semibold'
+                      : 'font-normal',
+                    stageState(i) === 'pending'
+                      ? 'text-ink-400'
+                      : 'text-ink-900',
                   ]"
                 >
                   {{ stage.title }}
