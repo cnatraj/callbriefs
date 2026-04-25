@@ -100,12 +100,12 @@ create table calls (
   id                uuid primary key default uuid_generate_v4(),
   org_id            uuid not null references organizations(id) on delete cascade,
   workspace_id      uuid not null references workspaces(id) on delete cascade,
-  created_by        uuid references users(id) on delete set null,
+  created_by        uuid default auth.uid() references users(id) on delete set null,
   prospect_name     text,
   prospect_company  text,
   prospect_email    text,
   transcript        text,
-  status            text not null default 'processing' check (status in ('processing', 'ready', 'sent')),
+  status            text not null default 'processing' check (status in ('processing', 'ready', 'sent', 'failed')),
   created_at        timestamp with time zone default now()
 );
 
@@ -454,6 +454,26 @@ create policy "owners and admins can delete documents"
   );
 
 grant delete on table public.documents to authenticated;
+
+
+-- Calls: any org member can create a call in a workspace they belong to.
+-- created_by is pinned to auth.uid() via column DEFAULT; WITH CHECK
+-- prevents spoofing.
+create policy "members can create calls"
+  on calls for insert
+  with check (
+    created_by = auth.uid()
+    and exists (
+      select 1
+        from workspaces w
+        join memberships m on m.org_id = w.org_id
+        where w.id = calls.workspace_id
+          and w.org_id = calls.org_id
+          and m.user_id = auth.uid()
+    )
+  );
+
+grant insert on table public.calls to authenticated;
 
 
 -- ========================

@@ -25,10 +25,11 @@ const router = createRouter({
     { path: "/", redirect: "/briefs" },
     { path: "/briefs", name: "briefs", component: Dashboard },
     {
-      path: "/briefs/processing",
+      path: "/briefs/processing/:callId",
       name: "brief-processing",
       component: BriefProcessing,
       meta: { layout: "processing" },
+      props: true,
     },
     { path: "/knowledge", name: "knowledge", component: Knowledge },
     { path: "/users", name: "users", component: Users },

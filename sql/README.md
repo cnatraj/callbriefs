@@ -6,6 +6,7 @@ For the consolidated current schema (cold-start for a fresh project), see [../do
 
 ---
 
+16. `dreaming-whale.sql` — adds `'failed'` to `calls.status`, pins `calls.created_by` to `auth.uid()` via DEFAULT, INSERT policy + grant on `calls` (org members only)
 15. `friendly-raven.sql` — `shares_org_with(user_id)` SECURITY DEFINER helper + a `users` SELECT policy that uses it, so teammates can see each other's profile rows
 14. `gliding-heron.sql` — narrows the `documents` storage bucket MIME types to PDF + images only (edge function doesn't handle docx/pptx)
 13. `soaring-eagle.sql` — grants `service_role` full access to `public` schema so edge functions (starting with `process-document`) can read/write app tables

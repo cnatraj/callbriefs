@@ -3,16 +3,22 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import AppModal from './AppModal.vue'
 import { useNewBriefModal } from '@/composables/useNewBriefModal'
+import { useOrgStore } from '@/stores/org'
+import * as callsService from '@/services/calls'
+import * as documentsService from '@/services/documents'
 import { IconSparkle, IconDoc, IconClock } from './icons'
 
 const { isOpen, close } = useNewBriefModal()
 const router = useRouter()
+const org = useOrgStore()
 
 const transcript = ref('')
 const textareaRef = ref(null)
+const submitting = ref(false)
+const errorMsg = ref('')
 
 const charCount = computed(() => transcript.value.trim().length)
-const canGenerate = computed(() => charCount.value > 0)
+const canGenerate = computed(() => charCount.value > 0 && !submitting.value)
 const statusLabel = computed(() =>
   charCount.value === 0
     ? 'empty'
@@ -22,15 +28,55 @@ const statusLabel = computed(() =>
 watch(isOpen, (open) => {
   if (open) {
     nextTick(() => textareaRef.value?.focus())
+    errorMsg.value = ''
   } else {
     transcript.value = ''
+    errorMsg.value = ''
+    submitting.value = false
   }
 })
 
-const handleGenerate = () => {
+const handleGenerate = async () => {
   if (!canGenerate.value) return
-  close()
-  router.push('/briefs/processing')
+  errorMsg.value = ''
+  submitting.value = true
+
+  try {
+    const orgId = org.currentOrgId
+    const workspaceId = org.currentWorkspaceId
+    if (!orgId || !workspaceId) {
+      errorMsg.value = 'No active workspace.'
+      return
+    }
+
+    // Preflight: workspace must have at least one ready knowledge doc.
+    const { count, error: countErr } =
+      await documentsService.getReadyDocumentCount(workspaceId)
+    if (countErr) {
+      errorMsg.value = countErr.message
+      return
+    }
+    if (count === 0) {
+      errorMsg.value =
+        'Add at least one knowledge article to this workspace before generating a brief.'
+      return
+    }
+
+    const { data, error: insertErr } = await callsService.createCall({
+      orgId,
+      workspaceId,
+      transcript: transcript.value.trim(),
+    })
+    if (insertErr) {
+      errorMsg.value = insertErr.message
+      return
+    }
+
+    close()
+    router.push(`/briefs/processing/${data.id}`)
+  } finally {
+    submitting.value = false
+  }
 }
 
 const placeholder = `Paste your transcript here…
@@ -94,6 +140,18 @@ const placeholder = `Paste your transcript here…
       </span>
     </div>
 
+    <div
+      v-if="errorMsg"
+      class="mt-4 px-[12px] py-[10px] rounded-[10px] border text-[13px]"
+      style="
+        background: color-mix(in oklch, var(--danger) 8%, white 92%);
+        border-color: color-mix(in oklch, var(--danger) 30%, white 70%);
+        color: color-mix(in oklch, var(--danger) 70%, black 30%);
+      "
+    >
+      {{ errorMsg }}
+    </div>
+
     <template #footer>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 text-[12.5px] text-ink-500">
@@ -116,7 +174,7 @@ const placeholder = `Paste your transcript here…
           @click="handleGenerate"
         >
           <IconSparkle :size="15" :sw="2" />
-          Generate Microsite
+          {{ submitting ? 'Starting…' : 'Generate Microsite' }}
         </button>
       </div>
     </template>

@@ -24,6 +24,18 @@ const extForFile = (file) => {
   return fromName || MIME_TO_EXT[file.type] || 'bin'
 }
 
+// Count of `ready` docs in a workspace — used as a preflight gate
+// before generating a microsite (we block generation when the workspace
+// has no usable knowledge yet).
+export const getReadyDocumentCount = async (workspaceId) => {
+  const { count, error } = await supabase
+    .from('documents')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'ready')
+  return { count: count ?? 0, error }
+}
+
 export const getDocumentsForWorkspace = (workspaceId) =>
   supabase
     .from('documents')
