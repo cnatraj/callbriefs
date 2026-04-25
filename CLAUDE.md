@@ -110,16 +110,25 @@ For a cold start against a fresh Supabase project, run [docs/callbriefs-schema.s
 
 ## What's built
 
-- Auth: email signup/login, Google OAuth, `/auth/callback`, sign out
-- Onboarding: one-step workspace creation → `complete_onboarding` RPC → `/briefs`
-- App shell: sidebar, header with avatar-menu sign out
-- Static mock pages: Dashboard (Briefs), Knowledge, Users, Settings — not wired to DB yet
-- Prospect-facing microsite at `/m/:id?` — static mock content
+- **Auth:** email signup/login, Google OAuth, `/auth/callback`, sign out.
+- **Onboarding:** one-step workspace creation → `complete_onboarding` RPC (creates org + owner membership + default Sales workspace atomically) → `/briefs`.
+- **App shell:** sidebar with org/workspace switcher (real data, functional), header with avatar-menu sign out.
+- **Create Workspace drawer** — admin/owner only, gated via `can('workspace.create')`.
+- **Knowledge feature (end-to-end):** upload PDFs + images (50 MB cap), list, delete (owner/admin), file drawer showing uploader, AI summary, and key topics. Workspace-scoped, with live status polling.
+- **Edge function `process-document`** — triggered by a Supabase Database Webhook on `documents` insert; extracts via Claude Sonnet 4.6 with prompt caching; writes `extracted_content` JSON + transitions status. Image MIME is sniffed from magic bytes to tolerate mislabeled uploads.
+- **Teammate profile visibility** via `shares_org_with()` SECURITY DEFINER helper — uploader names show up across the app for org members.
+- **Permissions layer** (`src/lib/permissions.js` + `useCan()`) — UI gating by role (`owner`/`admin`/`member`).
+- **Reusable primitives:** `AppModal`, `AppDrawer`, `StatusPill` (with pulsing dot during `processing`).
+- **Prospect-facing microsite** at `/m/:id?` — static mock content.
 
 ## Not built yet (tracked roughly)
 
-- Invites flow — `invites` table, `accept_invite` RPC, `/accept-invite` view. Email-based, tokenized.
-- Org switcher UI in the header (schema supports multi-org; UI assumes one)
-- Real data wiring for Calls, Microsites, Documents — currently `src/data/*.js` stubs
-- Supabase Edge Functions for AI work: `process-transcript`, `generate-microsite`, `extract-document`
-- Teammate visibility in `users` RLS — needs a `SECURITY DEFINER` helper (`is_member_of_org(org_id)`) so the Users page can list coworkers
+See [todo.md](todo.md) for the full list with context per item. High-level:
+
+- **Invites flow** — `invites` table, `accept_invite` RPC, `/accept-invite` view. Email-based, tokenized.
+- **Onboarding checklist** — spec written, paused.
+- **Calls / microsites** — data model exists; UI still on static mocks under `src/data/*.js`.
+- **Additional edge functions** — `process-transcript`, `generate-microsite` planned but not built.
+- **RAG pipeline** — triggered when the 5-artifact-per-workspace cap gets raised (see todo.md).
+- **docx / pptx extraction** — skipped for MVP; Claude doesn't ingest them natively.
+- **Users management page, org switcher UI, workspace settings, org settings, account settings** — unbuilt surfaces.

@@ -3,10 +3,7 @@ import { computed } from "vue";
 import AppDrawer from "@/components/AppDrawer.vue";
 import FileKindBadge from "./FileKindBadge.vue";
 import StatusPill from "@/components/StatusPill.vue";
-import {
-  IconArrowUpRight,
-  IconSparkle,
-} from "@/components/icons";
+import { IconArrowUpRight, IconSparkle } from "@/components/icons";
 import { useArtifactDrawer } from "@/composables/useArtifactDrawer";
 import { useDocumentsStore } from "@/stores/documents";
 import { useCan } from "@/composables/useCan";
@@ -57,14 +54,18 @@ const formatLongDate = (iso) => {
 
 const shortId = (id) => (id ? id.slice(0, 8) : "");
 
-const kind = computed(() => (activeDoc.value ? kindOf(activeDoc.value.mime_type) : "other"));
+const kind = computed(() =>
+  activeDoc.value ? kindOf(activeDoc.value.mime_type) : "other",
+);
 const typeLabel = computed(
   () => MIME_TO_LABEL[activeDoc.value?.mime_type] ?? "Document",
 );
 
 // Pull fields out of extracted_content defensively — the shape is
 // controlled by the user's extraction prompt, so keys may shift.
-const summary = computed(() => activeDoc.value?.extracted_content?.summary ?? null);
+const summary = computed(
+  () => activeDoc.value?.extracted_content?.summary ?? null,
+);
 const keyTopics = computed(() => {
   const t = activeDoc.value?.extracted_content?.key_topics;
   return Array.isArray(t) ? t : [];
@@ -98,15 +99,15 @@ const onDelete = async () => {
             style="letter-spacing: -0.015em"
           >
             {{ activeDoc.name }}
+
+            <StatusPill :status="activeDoc.status" class="ml-2" />
           </div>
           <div
-            class="flex items-center flex-wrap gap-x-2 gap-y-1 mt-[6px] text-[12.5px] text-ink-500"
+            class="flex items-center flex-wrap gap-x-2 gap-y-1 mt-[6px] text-[12.5px] text-ink-500 mono"
           >
-            <span class="mono">{{ shortId(activeDoc.id) }}</span>
+            <span>{{ formatLongDate(activeDoc.created_at) }}</span>
             <span>·</span>
             <span>{{ formatBytes(activeDoc.file_size) }}</span>
-            <span>·</span>
-            <StatusPill :status="activeDoc.status" />
           </div>
         </div>
       </div>
@@ -121,7 +122,7 @@ const onDelete = async () => {
             class="grid items-center gap-y-[10px] text-[13px]"
             style="grid-template-columns: 110px 1fr"
           >
-            <div class="text-ink-500">Uploader</div>
+            <div class="text-ink-500">Owner</div>
             <div class="flex items-center gap-2 min-w-0 text-ink-900">
               <div
                 class="w-[22px] h-[22px] grid place-items-center rounded-full border border-ink-150 bg-ink-100 text-ink-700 text-[10px] font-semibold shrink-0"
@@ -132,12 +133,6 @@ const onDelete = async () => {
                 {{ profileDisplayName(activeDoc.uploader) ?? "—" }}
               </span>
             </div>
-            <div class="text-ink-500">Uploaded</div>
-            <div class="text-ink-900">
-              {{ formatLongDate(activeDoc.created_at) }}
-            </div>
-            <div class="text-ink-500">File type</div>
-            <div class="text-ink-900">{{ typeLabel }}</div>
           </div>
         </section>
 
@@ -159,7 +154,7 @@ const onDelete = async () => {
             <span class="eyebrow">Summary</span>
           </div>
           <div
-            class="p-[14px] rounded-[10px] bg-nav-bg border border-ink-100 text-[13.5px] text-ink-900 leading-[1.55]"
+            class="p-[14px] rounded-[10px] bg-nav-bg border border-ink-200 text-[13.5px] text-ink-700 leading-[1.55]"
           >
             {{ summary }}
           </div>
@@ -186,7 +181,7 @@ const onDelete = async () => {
             <span
               v-for="t in keyTopics"
               :key="t"
-              class="mono text-[11.5px] text-ink-700 px-[9px] py-[4px] rounded-full bg-ink-100 border border-ink-150"
+              class="mono text-[12px] text-ink-700 px-[9px] py-[4px] rounded-sm bg-ink-100 border border-ink-150"
             >
               {{ t }}
             </span>
@@ -198,7 +193,8 @@ const onDelete = async () => {
           v-if="
             !summary &&
             !keyTopics.length &&
-            (activeDoc.status === 'uploaded' || activeDoc.status === 'processing')
+            (activeDoc.status === 'uploaded' ||
+              activeDoc.status === 'processing')
           "
           class="rounded-[10px] border border-dashed border-ink-200 p-4 text-center text-[13px] text-ink-500"
         >
@@ -210,7 +206,8 @@ const onDelete = async () => {
           "
           class="rounded-[10px] border border-dashed border-ink-200 p-4 text-center text-[13px] text-ink-500"
         >
-          Processing failed. The file is still available — re-uploading may help.
+          Processing failed. The file is still available — re-uploading may
+          help.
         </section>
       </div>
     </template>

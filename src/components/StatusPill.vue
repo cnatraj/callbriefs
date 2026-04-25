@@ -74,12 +74,12 @@ const isProcessing = computed(() => props.status === 'processing')
   >
     <span
       v-if="isProcessing"
-      class="rounded-full"
+      class="rounded-full status-dot-pulse"
       :style="{
         width: '7px',
         height: '7px',
         background: meta.dot,
-        boxShadow: `0 0 0 3px color-mix(in oklch, ${meta.dot} 25%, transparent)`,
+        '--pulse-color': meta.dot,
       }"
     />
     <span
@@ -93,3 +93,22 @@ const isProcessing = computed(() => props.status === 'processing')
     </span>
   </span>
 </template>
+
+<style scoped>
+.status-dot-pulse {
+  box-shadow: 0 0 0 0 color-mix(in oklch, var(--pulse-color) 40%, transparent);
+  animation: status-dot-pulse 1.4s ease-out infinite;
+}
+
+@keyframes status-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--pulse-color) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px color-mix(in oklch, var(--pulse-color) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--pulse-color) 0%, transparent);
+  }
+}
+</style>

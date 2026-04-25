@@ -41,6 +41,41 @@ const arrayBufferToBase64 = (buf: ArrayBuffer): string => {
   return btoa(binary);
 };
 
+// Detect the real image MIME type from magic bytes. The stored mime_type
+// on `documents` comes from the browser upload and can lie (extension
+// mismatch, renamed files, etc.) — Claude's API sniffs the content and
+// rejects mismatches with a 400. Returns null for unrecognized bytes;
+// the caller should fall back to the stored value in that case.
+const detectImageMime = (bytes: Uint8Array): string | null => {
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e &&
+    bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a &&
+    bytes[6] === 0x1a && bytes[7] === 0x0a
+  ) return "image/png";
+  // JPEG: FF D8 FF
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  ) return "image/jpeg";
+  // GIF: "GIF87a" or "GIF89a"
+  if (
+    bytes.length >= 6 &&
+    bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 &&
+    bytes[3] === 0x38 && (bytes[4] === 0x37 || bytes[4] === 0x39) &&
+    bytes[5] === 0x61
+  ) return "image/gif";
+  // WEBP: "RIFF" ... "WEBP"
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 &&
+    bytes[3] === 0x46 && bytes[8] === 0x57 && bytes[9] === 0x45 &&
+    bytes[10] === 0x42 && bytes[11] === 0x50
+  ) return "image/webp";
+  return null;
+};
+
 // Build the right content block for Claude based on the uploaded MIME type.
 // Storage-layer MIME restrictions mean we only ever see these types, but
 // this also acts as a defensive check.
@@ -114,11 +149,20 @@ Deno.serve(async (req) => {
       .download(doc.file_url);
     if (dlErr) throw dlErr;
 
-    const base64Data = arrayBufferToBase64(await blob.arrayBuffer());
+    const arrayBuffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const base64Data = arrayBufferToBase64(arrayBuffer);
 
-    const fileBlock = buildFileBlock(doc.mime_type, base64Data);
+    // Trust the file contents over the stored mime_type — browsers lie.
+    let effectiveMime = doc.mime_type;
+    if (doc.mime_type?.startsWith("image/")) {
+      const detected = detectImageMime(bytes);
+      if (detected) effectiveMime = detected;
+    }
+
+    const fileBlock = buildFileBlock(effectiveMime, base64Data);
     if (!fileBlock) {
-      throw new Error(`Unsupported mime type: ${doc.mime_type}`);
+      throw new Error(`Unsupported mime type: ${effectiveMime}`);
     }
 
     // Call Claude. System prompt uses cache_control so repeated invocations
