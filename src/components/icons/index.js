@@ -105,3 +105,7 @@ export const IconBuilding = make(() => [
   h('rect', { x: 4, y: 3, width: 16, height: 18, rx: 1 }),
   h('path', { d: 'M12 3v18' }),
 ])
+export const IconMail = make(() => [
+  h('rect', { x: 3, y: 5, width: 18, height: 14, rx: 2 }),
+  h('path', { d: 'm3 7 9 6 9-6' }),
+])

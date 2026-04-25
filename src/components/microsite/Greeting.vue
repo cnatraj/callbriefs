@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { MICROSITE } from "@/data/microsite";
+import { IconMail } from "@/components/icons";
 
 const props = defineProps({
   content: { type: Object, default: null },
@@ -49,7 +50,7 @@ const ownerEmail = computed(
       >
         {{ ownerInitials }}
       </div>
-      <div class="min-w-0">
+      <div class="flex-1 min-w-0">
         <div
           class="text-[13px] font-medium text-ink-900 truncate leading-[1.25]"
         >
@@ -59,6 +60,16 @@ const ownerEmail = computed(
           {{ ownerEmail }} · replies within the hour
         </div>
       </div>
+      <a
+        :href="`mailto:${ownerEmail}`"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="shrink-0 w-[32px] h-[32px] grid place-items-center rounded-[8px] text-ink-700 border border-ink-150 bg-surface hover:bg-ink-100 transition-colors"
+        :title="`Email ${ownerName}`"
+        :aria-label="`Email ${ownerName}`"
+      >
+        <IconMail :size="14" />
+      </a>
     </div>
   </div>
 </template>
