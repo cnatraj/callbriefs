@@ -7,6 +7,7 @@ import Tabs from "@/components/microsite/Tabs.vue";
 import HeardTab from "@/components/microsite/HeardTab.vue";
 import WhyTab from "@/components/microsite/WhyTab.vue";
 import Footer from "@/components/microsite/Footer.vue";
+import ShareCard from "@/components/microsite/ShareCard.vue";
 import StickyCTA from "@/components/microsite/StickyCTA.vue";
 import { getMicrositeBySlug } from "@/services/microsites";
 
@@ -74,6 +75,7 @@ watch(() => route.params.id, fetchMicrosite, { immediate: true });
       <div class="px-6 pt-[6px] pb-7 flex flex-col gap-7">
         <HeardTab v-if="tab === 'heard'" :content="content" />
         <WhyTab v-else />
+        <ShareCard :company="content?.participants?.prospect?.company" />
       </div>
       <Footer
         :participants="content?.participants"
