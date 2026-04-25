@@ -8,6 +8,7 @@ import Signup from "@/views/auth/Signup.vue";
 import AuthCallback from "@/views/auth/AuthCallback.vue";
 import Onboarding from "@/views/onboarding/Onboarding.vue";
 import Microsite from "@/views/Microsite.vue";
+import BriefProcessing from "@/views/BriefProcessing.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useOrgStore } from "@/stores/org";
 
@@ -23,6 +24,12 @@ const router = createRouter({
   routes: [
     { path: "/", redirect: "/briefs" },
     { path: "/briefs", name: "briefs", component: Dashboard },
+    {
+      path: "/briefs/processing",
+      name: "brief-processing",
+      component: BriefProcessing,
+      meta: { layout: "processing" },
+    },
     { path: "/knowledge", name: "knowledge", component: Knowledge },
     { path: "/users", name: "users", component: Users },
     { path: "/settings", name: "settings", component: Settings },

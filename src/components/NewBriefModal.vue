@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import AppModal from './AppModal.vue'
 import { useNewBriefModal } from '@/composables/useNewBriefModal'
 import { IconSparkle, IconDoc, IconClock } from './icons'
 
 const { isOpen, close } = useNewBriefModal()
+const router = useRouter()
 
 const transcript = ref('')
 const textareaRef = ref(null)
@@ -28,6 +30,7 @@ watch(isOpen, (open) => {
 const handleGenerate = () => {
   if (!canGenerate.value) return
   close()
+  router.push('/briefs/processing')
 }
 
 const placeholder = `Paste your transcript here…
