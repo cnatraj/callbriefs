@@ -113,6 +113,15 @@ export const IconCopy = make(() => [
   h('rect', { x: 9, y: 9, width: 12, height: 12, rx: 2 }),
   h('path', { d: 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1' }),
 ])
+export const IconRotateCcw = make(() => [
+  h('path', { d: 'M3 12a9 9 0 1 0 3-6.7L3 8' }),
+  h('path', { d: 'M3 3v5h5' }),
+])
+export const IconArrowDownToLine = make(() => [
+  h('path', { d: 'M12 17V3' }),
+  h('path', { d: 'm6 11 6 6 6-6' }),
+  h('path', { d: 'M5 21h14' }),
+])
 
 // Speed / momentum
 export const IconZap = make(path('M13 2 3 14h7l-1 8 10-12h-7l1-8z'))

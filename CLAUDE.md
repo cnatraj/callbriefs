@@ -30,6 +30,8 @@ B2B SaaS for sales reps. Turns a call transcript or recording into a personalize
 Component → Pinia store → service (plain async fn) → Supabase
 ```
 
+**Services and stores are named after DB tables, not UI concepts.** The dashboard's "briefs" list lives in `services/calls.js` + `stores/calls.js` (with the microsite embedded), because the base table is `calls`. The "brief" name only exists at the component/route/copy level — there's no `briefs.js` and shouldn't be one. Don't rename to match UI labels; the table-aligned name is honest about what's being read.
+
 **Pinia stores (global state):**
 - `stores/auth.js` — session, user, sign-in/out actions
 - `stores/org.js` — memberships, `currentOrgId`, `currentOrg`, `currentRole`, `isOnboarded`, onboarding action

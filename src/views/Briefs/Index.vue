@@ -22,10 +22,6 @@ const showOnboarding = ref(true);
         >
           Good afternoon, Ava.
         </div>
-        <div class="text-ink-500 mt-1">
-          You have 3 briefs waiting on review and 2 calls from yesterday ready
-          to draft.
-        </div>
       </div>
       <div class="flex items-center gap-[14px] text-[12px] text-ink-500">
         <span class="mono">WED · APR 22</span>
@@ -38,7 +34,7 @@ const showOnboarding = ref(true);
 
     <HeroCTA />
 
-    <StatsRow />
+    <!-- <StatsRow /> -->
 
     <BriefsTable />
   </div>

@@ -66,7 +66,6 @@ Follow-up items flagged during development. Not blockers — things worth revisi
 
 ## Cleanup / housekeeping
 
-- **Rename `useCallsStore` → `useBriefsStore`** (and `services/calls.js` → `services/briefs.js`). DB tables stay as-is. Pure rename to align frontend naming with the UI concept ("brief"). The store already exposes both `activeCall` and `microsite`, so the name is misleading.
 - **Drop `src/data/microsite.js` mock** — currently used as fallback by Header / Greeting / Footer / HeardTab / WhyTab / StickyCTA when `content` is null. Once the demo `/m/` route (no slug) is no longer needed, remove the mock and delete the fallback branches in each component.
 - **Strip `?preview=true` from URL after consuming it on Detail mount.** Currently left intact per product call. If we want to prevent accidental refresh re-triggering the drawer, add `router.replace({ query: rest })` after `previewDrawer.open(...)`.
 - **Remove the dead `IconBolt` / `IconLink` imports + legacy `bolt`/`link`/`shield`/`users` keys in WhyTab's `ICON_MAP`** once the demo route is dropped (they only exist for `MICROSITE.diffs` fallback).

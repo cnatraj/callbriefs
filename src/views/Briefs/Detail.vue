@@ -1,10 +1,13 @@
 <script setup>
-import { computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCallsStore } from '@/stores/calls'
 import { usePreviewDrawer } from '@/composables/usePreviewDrawer'
-import { IconSparkle, IconArrowUpRight, IconEye } from '@/components/icons'
+import BriefHero from '@/components/brief/BriefHero.vue'
+import StoryEmpty from '@/components/brief/StoryEmpty.vue'
 import Story from '@/components/brief/Story.vue'
+import SignalsPreview from '@/components/brief/SignalsPreview.vue'
+import ReminderStrip from '@/components/brief/ReminderStrip.vue'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -56,15 +59,28 @@ const microsite = computed(() => calls.microsite)
 const content = computed(() => microsite.value?.content ?? null)
 const slug = computed(() => microsite.value?.slug ?? null)
 
-const briefTitle = computed(() => content.value?.title ?? 'Brief')
-const briefContext = computed(() => {
-  const p = content.value?.participants
-  if (!p) return null
-  const meeting = p.meeting_type ?? 'Call'
-  const rep = p.rep?.name ?? 'Rep'
-  const prospect = p.prospect?.name ?? p.prospect?.company ?? 'Prospect'
-  return `${meeting} • ${rep} ↔ ${prospect}`
+const briefTitle = computed(
+  () => content.value?.header?.title || 'Brief',
+)
+
+const prospectFirstName = computed(() => {
+  const name =
+    calls.activeCall?.prospect_name ||
+    content.value?.participants?.prospect?.firstName ||
+    content.value?.participants?.prospect?.name
+  if (!name) return 'your prospect'
+  return name.trim().split(/\s+/)[0]
 })
+
+const prospectCompany = computed(
+  () =>
+    calls.activeCall?.prospect_company ||
+    content.value?.participants?.prospect?.company ||
+    'their company',
+)
+
+// Story-feed switch — false until event tracking lands.
+const hasViews = computed(() => false)
 
 const showPreview = () => {
   if (!microsite.value?.id) return
@@ -75,6 +91,22 @@ const openProspectView = () => {
   if (!slug.value) return
   window.open(`/m/${slug.value}`, '_blank', 'noopener,noreferrer')
 }
+
+const copied = ref(false)
+let copyResetTimer = null
+const copyShareLink = async () => {
+  if (!slug.value) return
+  const url = `${window.location.origin}/m/${slug.value}`
+  try {
+    await navigator.clipboard.writeText(url)
+    copied.value = true
+    if (copyResetTimer) clearTimeout(copyResetTimer)
+    copyResetTimer = setTimeout(() => (copied.value = false), 1500)
+  } catch (err) {
+    console.error('[brief-detail] clipboard write failed:', err)
+  }
+}
+
 const goBriefs = () => router.push('/briefs')
 </script>
 
@@ -104,52 +136,30 @@ const goBriefs = () => router.push('/briefs')
     </div>
 
     <!-- Ready state -->
-    <div v-else-if="isReady" class="max-w-[760px] mx-auto flex flex-col gap-[24px]">
-      <div class="flex items-center justify-end gap-[8px]">
-        <button
-          type="button"
-          :disabled="!microsite?.id"
-          class="inline-flex items-center gap-[6px] px-[12px] py-[8px] rounded-[8px] border border-ink-150 bg-surface text-ink-900 text-[12.5px] font-medium cursor-pointer hover:bg-ink-100 transition-colors disabled:cursor-not-allowed disabled:text-ink-400"
-          @click="showPreview"
-        >
-          <IconEye :size="13" />
-          Show preview
-        </button>
-        <button
-          type="button"
-          :disabled="!slug"
-          class="inline-flex items-center gap-[6px] px-[12px] py-[8px] rounded-[8px] border text-[12.5px] font-medium transition-colors"
-          :class="
-            slug
-              ? 'bg-ink-900 text-bg border-ink-900 cursor-pointer'
-              : 'bg-ink-100 text-ink-400 border-ink-150 cursor-not-allowed'
-          "
-          @click="openProspectView"
-        >
-          Open as prospect
-          <IconArrowUpRight :size="13" :sw="2" />
-        </button>
-      </div>
+    <div
+      v-else-if="isReady"
+      class="max-w-[1080px] mx-auto flex flex-col gap-[20px]"
+    >
+      <BriefHero
+        :title="briefTitle"
+        :can-preview="!!microsite?.id"
+        :can-share="!!slug"
+        @preview="showPreview"
+        @copy-link="copyShareLink"
+        @open-as-prospect="openProspectView"
+      />
 
-      <section class="bg-surface border border-ink-150 rounded-[14px] p-[24px]">
-        <div class="flex items-center gap-[6px] eyebrow text-ink-500">
-          <IconSparkle :size="12" :sw="2" />
-          Brief
-        </div>
+      <StoryEmpty
+        v-if="!hasViews"
+        :slug="slug"
+        :prospect-first-name="prospectFirstName"
+        :prospect-company="prospectCompany"
+      />
+      <Story v-else :slug="slug" />
 
-        <h1
-          class="mt-[12px] text-[24px] font-semibold text-ink-900"
-          style="letter-spacing: -0.02em; line-height: 1.2"
-        >
-          {{ briefTitle }}
-        </h1>
+      <SignalsPreview :prospect-first-name="prospectFirstName" />
 
-        <div v-if="briefContext" class="mt-[6px] text-ink-500 text-[13.5px]">
-          {{ briefContext }}
-        </div>
-      </section>
-
-      <Story :slug="slug" />
+      <ReminderStrip :prospect-first-name="prospectFirstName" />
     </div>
   </div>
 </template>

@@ -23,6 +23,17 @@ export const getCallWithMicrosite = (callId) =>
     .eq('id', callId)
     .single()
 
+// Dashboard list. Embeds the microsite (if generated) for company-name
+// fallback, plus the rep via the created_by FK to users.
+export const getCallsForWorkspace = (workspaceId) =>
+  supabase
+    .from('calls')
+    .select(
+      'id, status, created_at, prospect_name, prospect_company, prospect_email, created_by, microsites(id, slug, content), rep:created_by(id, name, email)',
+    )
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+
 // Direct invoke of the edge function — used for the retry path. The
 // function reuses the same call row (per product decision) and either
 // inserts or updates the microsite row.

@@ -15,6 +15,12 @@ export const useCallsStore = defineStore('calls', () => {
   const error = ref(null)
   const loadedCallId = ref(null)
 
+  // Dashboard list state. Static — no realtime, no polling for now.
+  const list = ref([])
+  const listLoading = ref(false)
+  const listError = ref(null)
+  const loadedListWorkspaceId = ref(null)
+
   const microsite = computed(() => activeCall.value?.microsites?.[0] ?? null)
 
   const loadCall = async (callId) => {
@@ -62,10 +68,33 @@ export const useCallsStore = defineStore('calls', () => {
     return { error: null }
   }
 
+  const loadList = async (workspaceId) => {
+    if (!workspaceId) {
+      list.value = []
+      loadedListWorkspaceId.value = null
+      return
+    }
+    listLoading.value = true
+    listError.value = null
+    const { data, error: err } =
+      await callsService.getCallsForWorkspace(workspaceId)
+    if (err) {
+      listError.value = err.message
+      list.value = []
+    } else {
+      list.value = data ?? []
+      loadedListWorkspaceId.value = workspaceId
+    }
+    listLoading.value = false
+  }
+
   const reset = () => {
     activeCall.value = null
     loadedCallId.value = null
     error.value = null
+    list.value = []
+    loadedListWorkspaceId.value = null
+    listError.value = null
   }
 
   const needsPolling = computed(
@@ -110,5 +139,10 @@ export const useCallsStore = defineStore('calls', () => {
     loadCall,
     retry,
     reset,
+    list,
+    listLoading,
+    listError,
+    loadedListWorkspaceId,
+    loadList,
   }
 })

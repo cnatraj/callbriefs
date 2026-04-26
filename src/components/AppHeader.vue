@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 
 defineProps({
   crumb: { type: String, default: "Dashboard" },
+  subCrumb: { type: String, default: null },
   searchPlaceholder: {
     type: String,
     default: "Search briefs, companies, reps…",
@@ -66,10 +67,21 @@ onBeforeUnmount(() => {
     class="h-14 px-[28px] border-b border-ink-150 bg-bg flex items-center gap-3"
   >
     <!-- Breadcrumbs -->
-    <div class="flex items-center gap-2 text-[13px] text-ink-500">
-      <span>Workspace</span>
-      <span class="text-ink-300">/</span>
-      <span class="text-ink-900 font-medium">{{ crumb }}</span>
+    <div class="flex items-center gap-2 text-[13px] text-ink-500 min-w-0">
+      <router-link
+        v-if="subCrumb"
+        to="/briefs"
+        class="hover:text-ink-900 transition-colors"
+      >
+        {{ crumb }}
+      </router-link>
+      <span v-else class="text-ink-900 font-medium">{{ crumb }}</span>
+      <template v-if="subCrumb">
+        <span class="text-ink-300">/</span>
+        <span class="text-ink-900 font-medium truncate max-w-[280px]">
+          {{ subCrumb }}
+        </span>
+      </template>
     </div>
 
     <!-- Search -->
