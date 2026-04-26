@@ -2,6 +2,11 @@
 
 Follow-up items flagged during development. Not blockers — things worth revisiting when the time is right. Strike through or remove entries when done.
 
+## Big next pieces
+
+- **Event tracking + Story session feed** — see CLAUDE.md "Story view" for the design intent. Schema (`microsite_events`) already exists. Open design questions: viewer identity (anonymous vs known), forward-tracking (per-recipient unique links?), notification cadence (push on first view? daily digest?), self-view filtering (rep's own preview hits shouldn't count). Sessionize raw events on read (cluster by viewer + 30-min idle window). Hybrid narrative generator: template for the bones + LLM for the qualitative read.
+- **Workspace pitch (the "Why GTR" tab)** — make it static per-workspace, generated once when artifacts are uploaded. New edge function `generate-pitch` triggered from inside `process-document` after status=ready. Writes to `workspaces.pitch_content` jsonb column. `generate-microsite` reads it and copies into `content.pitch` at brief generation time (same denormalize pattern as `brief_owner`/`org`).
+
 ## Performance
 
 - **Lazy-load `extracted_content` on drawer open.** The documents list query in [src/services/documents.js](src/services/documents.js) currently selects `extracted_content` (a `jsonb` blob) for every row, even though the Knowledge table view only reads the other columns. If the library grows large (hundreds+ of docs with sizable extracted content), refactor to:
@@ -58,6 +63,16 @@ Follow-up items flagged during development. Not blockers — things worth revisi
   - Both are prompt-side changes plus UI rendering in [src/components/knowledge/ArtifactDrawer.vue](src/components/knowledge/ArtifactDrawer.vue).
 
 - **Document kind badge for non-image/non-pdf.** When docx/pptx support lands (see below), update `MIME_TO_KIND` maps in [src/components/knowledge/ArtifactsTable.vue](src/components/knowledge/ArtifactsTable.vue) and [src/components/knowledge/ArtifactDrawer.vue](src/components/knowledge/ArtifactDrawer.vue) + the storage bucket's `allowed_mime_types`.
+
+## Cleanup / housekeeping
+
+- **Rename `useCallsStore` → `useBriefsStore`** (and `services/calls.js` → `services/briefs.js`). DB tables stay as-is. Pure rename to align frontend naming with the UI concept ("brief"). The store already exposes both `activeCall` and `microsite`, so the name is misleading.
+- **Drop `src/data/microsite.js` mock** — currently used as fallback by Header / Greeting / Footer / HeardTab / WhyTab / StickyCTA when `content` is null. Once the demo `/m/` route (no slug) is no longer needed, remove the mock and delete the fallback branches in each component.
+- **Strip `?preview=true` from URL after consuming it on Detail mount.** Currently left intact per product call. If we want to prevent accidental refresh re-triggering the drawer, add `router.replace({ query: rest })` after `previewDrawer.open(...)`.
+- **Remove the dead `IconBolt` / `IconLink` imports + legacy `bolt`/`link`/`shield`/`users` keys in WhyTab's `ICON_MAP`** once the demo route is dropped (they only exist for `MICROSITE.diffs` fallback).
+- **Tool stack section in HeardTab is currently commented out.** Either ship it or delete the dead code.
+- **Schema oddities in [generate-microsite/prompt.ts](supabase/functions/generate-microsite/prompt.ts):** VOICE rule #5 references nonexistent `exact_quote` fields; `projected_impact` example uses `improvement` but schema field is `number`; `closer` says "the reinforces". Cleanup pass when iterating the prompt.
+- **Highlighted phrases in the closer.** Schema returns `closer` as a single string. Screenshot inspiration showed citron-highlighted key phrases. Requires prompt change (Markdown bold or structured tokens) + parser on the client.
 
 ## Deferred features (explicitly paused)
 

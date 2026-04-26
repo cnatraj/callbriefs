@@ -73,7 +73,7 @@ const handleGenerate = async () => {
     }
 
     close()
-    router.push(`/briefs/processing/${data.id}`)
+    router.push(`/briefs/${data.id}/processing`)
   } finally {
     submitting.value = false
   }

@@ -9,3 +9,12 @@ export const getMicrositeBySlug = (slug) =>
     .select('id, slug, status, content, created_at, call_id, workspace_id, org_id')
     .eq('slug', slug)
     .maybeSingle()
+
+// Same shape, looked up by primary key. Used by the rep-side preview drawer
+// where we already know the microsite id from the calls store.
+export const getMicrositeById = (id) =>
+  supabase
+    .from('microsites')
+    .select('id, slug, status, content, created_at, call_id, workspace_id, org_id')
+    .eq('id', id)
+    .maybeSingle()

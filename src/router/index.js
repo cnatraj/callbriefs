@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Dashboard from "@/views/Dashboard.vue";
+import BriefsIndex from "@/views/Briefs/Index.vue";
+import BriefDetail from "@/views/Briefs/Detail.vue";
+import BriefProcessing from "@/views/Briefs/Processing.vue";
 import Knowledge from "@/views/Knowledge.vue";
 import Users from "@/views/Users.vue";
 import Settings from "@/views/Settings.vue";
@@ -7,13 +9,16 @@ import Login from "@/views/auth/Login.vue";
 import Signup from "@/views/auth/Signup.vue";
 import AuthCallback from "@/views/auth/AuthCallback.vue";
 import Onboarding from "@/views/onboarding/Onboarding.vue";
-import Microsite from "@/views/Microsite.vue";
-import BriefProcessing from "@/views/BriefProcessing.vue";
+import Microsite from "@/views/Prospect/Microsite.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useOrgStore } from "@/stores/org";
 
 export const pages = {
-  briefs: { crumb: "Dashboard", search: "Search briefs, companies, reps…" },
+  briefs: { crumb: "Briefs", search: "Search briefs, companies, reps…" },
+  "brief-detail": {
+    crumb: "Briefs",
+    search: "Search briefs, companies, reps…",
+  },
   knowledge: { crumb: "Knowledge", search: "Search artifacts, tags, owners…" },
   users: { crumb: "Users", search: "Search users, teams…" },
   settings: { crumb: "Settings", search: "Search settings…" },
@@ -23,9 +28,15 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/", redirect: "/briefs" },
-    { path: "/briefs", name: "briefs", component: Dashboard },
+    { path: "/briefs", name: "briefs", component: BriefsIndex },
     {
-      path: "/briefs/processing/:callId",
+      path: "/briefs/:id",
+      name: "brief-detail",
+      component: BriefDetail,
+      props: true,
+    },
+    {
+      path: "/briefs/:id/processing",
       name: "brief-processing",
       component: BriefProcessing,
       meta: { layout: "processing" },

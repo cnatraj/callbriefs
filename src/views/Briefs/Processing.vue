@@ -17,7 +17,7 @@ import {
 } from '@/components/icons'
 
 const props = defineProps({
-  callId: { type: String, required: true },
+  id: { type: String, required: true },
 })
 
 const router = useRouter()
@@ -47,16 +47,13 @@ const stages = [
   },
 ]
 
-// Per-stage random duration (8–12s) so the cadence doesn't feel staged.
-// Total ~50s — close enough to a typical Claude call that the eye candy
-// usually finishes around the same time as the real work.
 const stageDurations = stages.map(() => 8000 + Math.random() * 4000)
 const cumulative = stageDurations.reduce((acc, d, i) => {
   acc.push((acc[i - 1] ?? 0) + d)
   return acc
 }, [])
 
-// ---------- Real-status state (drives the page's truth) -------------------
+// ---------- Real-status state -------------------------------------------
 const startedAt = ref(performance.now())
 const elapsed = ref(0)
 let intervalId = null
@@ -74,15 +71,24 @@ const stopTimer = () => {
   }
 }
 
-onMounted(() => calls.loadCall(props.callId))
+// On initial mount, redirect to Detail if status is already ready.
+// (User typed/refreshed the URL — they shouldn't see the pipeline for a
+// brief that's already done.) After mount we let polling update content
+// in place — the "View brief" button takes over for the user-driven hop.
+onMounted(async () => {
+  await calls.loadCall(props.id)
+  if (calls.activeCall?.status === 'ready') {
+    router.replace(`/briefs/${props.id}`)
+  }
+})
 onBeforeUnmount(() => {
   stopTimer()
   calls.reset()
 })
 
-// Re-load if the route param changes (in-app navigation between briefs)
+// Re-load if route param changes (in-app nav between briefs)
 watch(
-  () => props.callId,
+  () => props.id,
   (next) => {
     if (next) {
       startedAt.value = performance.now()
@@ -101,8 +107,6 @@ const isMissing = computed(
 )
 
 // Drive the elapsed timer off real status: run only while processing.
-// Stops the moment the call flips to ready or failed (so the error screen
-// doesn't show a still-ticking clock), starts again on retry.
 watch(
   isProcessing,
   (running) => {
@@ -112,8 +116,6 @@ watch(
   { immediate: true },
 )
 
-// Animation index based on elapsed time. Caps at last stage so the spinner
-// loops indefinitely until the real status flips.
 const animatedIndex = computed(() => {
   for (let i = 0; i < stages.length; i++) {
     if (elapsed.value < cumulative[i]) return i
@@ -121,7 +123,6 @@ const animatedIndex = computed(() => {
   return stages.length - 1
 })
 
-// Effective stage state: complete snaps everything to done.
 const effectiveActiveIndex = computed(() =>
   isComplete.value ? stages.length : animatedIndex.value,
 )
@@ -132,7 +133,7 @@ const stageState = (i) => {
   return 'pending'
 }
 
-// ---------- Brief meta + counts (placeholder until LLM returns) -----------
+// ---------- Brief meta + counts -----------------------------------------
 const transcript = computed(() => calls.activeCall?.transcript ?? '')
 
 const wordCount = computed(() => {
@@ -157,7 +158,7 @@ const briefContext = computed(() => {
 const callMin = computed(() => content.value?.meta?.call_min ?? null)
 const turns = computed(() => content.value?.meta?.turns ?? null)
 
-// ---------- Time display -------------------------------------------------
+// ---------- Time display ------------------------------------------------
 const fmtTime = (ms) => {
   const total = Math.max(0, Math.floor(ms / 1000))
   const m = Math.floor(total / 60)
@@ -166,10 +167,12 @@ const fmtTime = (ms) => {
 }
 const elapsedLabel = computed(() => fmtTime(elapsed.value))
 
-// ---------- Actions ------------------------------------------------------
-const openMicrosite = () => {
-  if (!isComplete.value || !microsite.value?.slug) return
-  router.push(`/m/${microsite.value.slug}`)
+// ---------- Actions -----------------------------------------------------
+const viewBrief = () => {
+  if (!isComplete.value) return
+  // Land on Detail with the preview rail already open — first-time
+  // post-generation, the rep wants to see what they're about to ship.
+  router.push(`/briefs/${props.id}?preview=true`)
 }
 const goBriefs = () => router.push('/briefs')
 
@@ -183,7 +186,7 @@ const handleRetry = async () => {
   retrying.value = false
 }
 
-// ---------- Floating highlight (slides between active rows) --------------
+// ---------- Floating highlight (slides between active rows) -------------
 const liRefs = ref([])
 const setLiRef = (el, i) => {
   if (el) liRefs.value[i] = el
@@ -226,7 +229,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
     <!-- Top bar -->
     <header class="bg-surface border-b border-ink-150">
       <div class="h-14 px-[28px] flex items-center gap-3">
-        <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-[13px] min-w-0">
           <button
             type="button"
@@ -247,29 +249,26 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
           <span class="text-ink-900 font-medium truncate">{{ briefTitle }}</span>
         </div>
 
-        <!-- Open microsite CTA -->
         <button
           type="button"
-          :disabled="!isComplete || !microsite?.slug"
+          :disabled="!isComplete"
           class="ml-auto inline-flex items-center gap-2 px-[18px] py-[10px] rounded-[10px] font-semibold border transition-colors"
           :class="
-            isComplete && microsite?.slug
+            isComplete
               ? 'bg-accent hover:bg-accent-strong text-accent-ink border-accent-strong shadow-cta cursor-pointer'
               : 'bg-ink-100 text-ink-400 border-ink-150 cursor-not-allowed'
           "
-          @click="openMicrosite"
+          @click="viewBrief"
         >
-          Open microsite
+          View brief
           <IconArrowRight :size="14" :sw="2" />
         </button>
       </div>
       <div class="h-[3px] bg-accent" />
     </header>
 
-    <!-- Content -->
     <main class="flex-1 px-[28px] pt-[56px] pb-[80px]">
       <div class="max-w-[640px] mx-auto flex flex-col gap-[40px]">
-        <!-- Loading the call -->
         <div
           v-if="calls.loading && !calls.activeCall"
           class="text-center text-ink-500 py-[80px]"
@@ -277,11 +276,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
           Loading brief…
         </div>
 
-        <!-- Call not found -->
-        <div
-          v-else-if="isMissing"
-          class="text-center py-[80px]"
-        >
+        <div v-else-if="isMissing" class="text-center py-[80px]">
           <div class="text-ink-900 font-medium mb-2">Brief not found</div>
           <div class="text-ink-500 text-[13px]">
             This brief may have been deleted, or the link is wrong.
@@ -390,7 +385,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
             </div>
           </section>
 
-          <!-- Pipeline (processing or complete) -->
+          <!-- Pipeline -->
           <section v-else>
             <div class="flex items-center justify-between">
               <div class="eyebrow">Pipeline</div>
@@ -407,7 +402,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
             </div>
 
             <ol class="relative mt-[22px] flex flex-col gap-[6px] isolate">
-              <!-- Floating active highlight -->
               <div
                 class="absolute rounded-[12px] bg-accent-tint pointer-events-none z-0"
                 style="
@@ -432,9 +426,7 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
                 :ref="(el) => setLiRef(el, i)"
                 class="relative z-10 flex items-start gap-[14px] rounded-[12px] px-[10px] py-[10px] -mx-[10px]"
               >
-                <!-- Indicator -->
                 <span class="shrink-0 mt-[1px] grid place-items-center">
-                  <!-- DONE -->
                   <span
                     v-if="stageState(i) === 'done'"
                     class="w-[20px] h-[20px] rounded-full grid place-items-center bg-accent text-accent-ink border border-accent-strong"
@@ -442,7 +434,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
                     <IconCheck :size="12" :sw="2.4" />
                   </span>
 
-                  <!-- ACTIVE: empty inner circle + rotating ring -->
                   <span
                     v-else-if="stageState(i) === 'active'"
                     class="relative w-[20px] h-[20px] grid place-items-center"
@@ -455,7 +446,6 @@ onBeforeUnmount(() => window.removeEventListener('resize', onResize))
                     />
                   </span>
 
-                  <!-- PENDING -->
                   <span
                     v-else
                     class="w-[20px] h-[20px] rounded-full bg-surface border border-ink-300"
