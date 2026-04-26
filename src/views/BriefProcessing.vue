@@ -61,14 +61,22 @@ const startedAt = ref(performance.now())
 const elapsed = ref(0)
 let intervalId = null
 
-onMounted(async () => {
-  await calls.loadCall(props.callId)
+const startTimer = () => {
+  if (intervalId) return
   intervalId = setInterval(() => {
     elapsed.value = performance.now() - startedAt.value
   }, 100)
-})
+}
+const stopTimer = () => {
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
+}
+
+onMounted(() => calls.loadCall(props.callId))
 onBeforeUnmount(() => {
-  clearInterval(intervalId)
+  stopTimer()
   calls.reset()
 })
 
@@ -90,6 +98,18 @@ const isFailed = computed(() => status.value === 'failed')
 const isProcessing = computed(() => status.value === 'processing')
 const isMissing = computed(
   () => !calls.loading && !calls.activeCall && !!calls.loadedCallId,
+)
+
+// Drive the elapsed timer off real status: run only while processing.
+// Stops the moment the call flips to ready or failed (so the error screen
+// doesn't show a still-ticking clock), starts again on retry.
+watch(
+  isProcessing,
+  (running) => {
+    if (running) startTimer()
+    else stopTimer()
+  },
+  { immediate: true },
 )
 
 // Animation index based on elapsed time. Caps at last stage so the spinner

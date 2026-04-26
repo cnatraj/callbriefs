@@ -40,14 +40,25 @@ export const useCallsStore = defineStore('calls', () => {
   const retry = async () => {
     if (!loadedCallId.value) return { error: new Error('No active call') }
     error.value = null
+    // Optimistic flip to 'processing' so the UI hides the failed state and
+    // shows the pipeline animation immediately. The needsPolling watcher
+    // kicks in from this status change and reconciles with the real result
+    // when the function eventually finishes.
+    if (activeCall.value) {
+      activeCall.value = { ...activeCall.value, status: 'processing' }
+    }
     const { error: err } = await callsService.retryGenerate(loadedCallId.value)
     if (err) {
       error.value = err.message
+      // Roll back the optimistic flip if the invoke itself failed
+      // (network error, function unreachable, etc.).
+      if (activeCall.value) {
+        activeCall.value = { ...activeCall.value, status: 'failed' }
+      }
       return { error: err }
     }
-    // The function flips status back to 'processing' early — re-fetch so
-    // polling kicks back in via the needsPolling watcher.
-    await loadCall(loadedCallId.value)
+    // No await on loadCall — polling already running from the optimistic
+    // flip will pick up the final 'ready'/'failed' status.
     return { error: null }
   }
 

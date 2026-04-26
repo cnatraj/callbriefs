@@ -29,12 +29,22 @@ import Anthropic from "npm:@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "./prompt.ts";
 
 const MODEL = "claude-sonnet-4-6";
-const MAX_TOKENS = 1500;
+const MAX_TOKENS = 8000;
+
+// CORS headers — needed because the retry path invokes this function
+// from the browser (supabase.functions.invoke), which sends a preflight
+// OPTIONS request first.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 
 // 10-char URL-safe slug. Collision probability is negligible at our volume,
@@ -65,11 +75,26 @@ const buildKnowledgeBundle = (
 };
 
 Deno.serve(async (req) => {
+  // CORS preflight from the browser (retry path uses functions.invoke)
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   let callId: string | undefined;
   let supabase: ReturnType<typeof createClient> | undefined;
 
   try {
-    const payload = await req.json();
+    // Defensive body parse — empty body returns a clean 400 instead of
+    // crashing the whole handler.
+    const text = await req.text();
+    let payload: { record?: { id?: string }; callId?: string } = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        return json({ error: "Invalid JSON body" }, 400);
+      }
+    }
     // Webhook: { record: { id } }   |   Direct invoke: { callId }
     callId = payload?.record?.id ?? payload?.callId;
     if (!callId) return json({ error: "Missing call id" }, 400);

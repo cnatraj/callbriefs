@@ -74,12 +74,12 @@ watch(() => route.params.id, fetchMicrosite, { immediate: true });
       <Tabs v-model="tab" />
       <div class="px-6 pt-[6px] pb-7 flex flex-col gap-7">
         <HeardTab v-if="tab === 'heard'" :content="content" />
-        <WhyTab v-else />
-        <ShareCard :company="content?.participants?.prospect?.company" />
+        <WhyTab v-else :content="content" :created-at="createdAt" />
       </div>
       <Footer
         :participants="content?.participants"
         :slug="route.params.id"
+        :org-name="content?.org?.name"
       />
     </div>
 

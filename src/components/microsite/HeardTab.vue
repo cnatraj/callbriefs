@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from "vue";
 import SectionHeader from "./SectionHeader.vue";
+import StrategicObjective from "./StrategicObjective.vue";
+import ShareCard from "@/components/microsite/ShareCard.vue";
 import { MICROSITE } from "@/data/microsite";
 import { IconCheck } from "@/components/icons";
 
@@ -86,6 +88,9 @@ const nextSteps = computed(() => {
 </script>
 
 <template>
+  <!-- Strategic objective -->
+  <StrategicObjective :content="content?.strategic_objective" />
+
   <!-- 01 What we heard -->
   <section>
     <SectionHeader num="01" label="What we heard" />
@@ -224,4 +229,5 @@ const nextSteps = computed(() => {
       </div>
     </div>
   </section>
+  <ShareCard :company="content?.participants?.prospect?.company" />
 </template>
