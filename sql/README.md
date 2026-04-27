@@ -6,6 +6,9 @@ For the consolidated current schema (cold-start for a fresh project), see [../do
 
 ---
 
+19. `quiet-bobcat.sql` — revokes anon INSERT on `microsite_events`; the `track-event` edge function is the single write path. Apply AFTER deploying the function.
+18. `circling-hawk.sql` — promotes `fingerprint_id` / `session_id` from `microsite_events.metadata` to first-class columns + indexes (Phase 2 of event tracking)
+17. `peering-mole.sql` — extends `microsite_events.event_type` check constraint to include `session_start` / `session_end` (Phase 1 of event tracking; see [../event-tracking.md](../event-tracking.md))
 16. `dreaming-whale.sql` — adds `'failed'` to `calls.status`, pins `calls.created_by` to `auth.uid()` via DEFAULT, INSERT policy + grant on `calls` (org members only)
 15. `friendly-raven.sql` — `shares_org_with(user_id)` SECURITY DEFINER helper + a `users` SELECT policy that uses it, so teammates can see each other's profile rows
 14. `gliding-heron.sql` — narrows the `documents` storage bucket MIME types to PDF + images only (edge function doesn't handle docx/pptx)

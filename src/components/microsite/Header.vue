@@ -28,6 +28,7 @@ const forName = computed(
 </script>
 
 <template>
+  <header data-section-name="header">
   <!-- Meta strip -->
   <div
     class="flex items-center justify-between gap-[10px] px-5 pt-[14px] eyebrow"
@@ -78,4 +79,5 @@ const forName = computed(
       </div>
     </div>
   </div>
+  </header>
 </template>

@@ -6,6 +6,9 @@ import Tabs from './Tabs.vue'
 import HeardTab from './HeardTab.vue'
 import WhyTab from './WhyTab.vue'
 import Footer from './Footer.vue'
+import { useSectionTracking } from '@/composables/useSectionTracking'
+
+useSectionTracking()
 
 defineProps({
   content: { type: Object, default: null },

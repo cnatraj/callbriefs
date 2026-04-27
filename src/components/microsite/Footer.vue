@@ -18,6 +18,7 @@ const eyebrow = computed(() =>
 <template>
   <div
     class="px-6 pt-[22px] pb-7 border-t border-ink-100 bg-nav-bg flex flex-col gap-[10px] items-center text-center"
+    data-section-name="footer"
   >
     <div class="eyebrow">{{ eyebrow }}</div>
     <div

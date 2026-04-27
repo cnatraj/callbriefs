@@ -3,8 +3,8 @@ const props = defineProps({ modelValue: { type: String, required: true } })
 const emit = defineEmits(['update:modelValue'])
 
 const TABS = [
-  { key: 'heard', label: 'What we heard' },
-  { key: 'why', label: 'Why GTR' },
+  { key: 'heard', label: 'What we heard', target: 'what_we_heard' },
+  { key: 'why', label: 'Why GTR', target: 'why_us' },
 ]
 </script>
 
@@ -28,6 +28,9 @@ const TABS = [
         :key="t.key"
         role="tab"
         :aria-selected="props.modelValue === t.key"
+        data-tracking-event="cta_clicked"
+        data-tracking-cta="tab"
+        :data-tracking-target="t.target"
         class="py-[9px] px-[10px] text-[13.5px] text-center rounded-[7px] cursor-pointer border-0 transition-colors"
         :class="
           props.modelValue === t.key

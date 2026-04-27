@@ -110,6 +110,7 @@ const trustedByLastRow = computed(
 </script>
 
 <template>
+  <div data-section-name="why_us" class="flex flex-col gap-7">
   <!-- Pitch stat card -->
   <section>
     <div
@@ -224,4 +225,5 @@ const trustedByLastRow = computed(
 
   <!-- Closer -->
   <Closer :content="content" :created-at="createdAt" />
+  </div>
 </template>

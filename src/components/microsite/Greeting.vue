@@ -29,7 +29,7 @@ const ownerEmail = computed(
 </script>
 
 <template>
-  <div class="px-6 pt-[22px] pb-1">
+  <div class="px-6 pt-[22px] pb-1" data-section-name="greeting">
     <div class="eyebrow mb-[10px]">{{ eyebrow }}</div>
     <h1
       class="text-[26px] font-semibold text-ink-900 m-0"
@@ -64,6 +64,8 @@ const ownerEmail = computed(
         :href="`mailto:${ownerEmail}`"
         target="_blank"
         rel="noopener noreferrer"
+        data-tracking-event="cta_clicked"
+        data-tracking-cta="email_rep"
         class="shrink-0 w-[32px] h-[32px] grid place-items-center rounded-[8px] text-ink-700 border border-ink-150 bg-surface hover:bg-ink-100 transition-colors"
         :title="`Email ${ownerName}`"
         :aria-label="`Email ${ownerName}`"

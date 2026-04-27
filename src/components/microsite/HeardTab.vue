@@ -88,6 +88,7 @@ const nextSteps = computed(() => {
 </script>
 
 <template>
+  <div data-section-name="what_we_heard" class="flex flex-col gap-7">
   <!-- Strategic objective -->
   <StrategicObjective :content="content?.strategic_objective" />
 
@@ -230,4 +231,5 @@ const nextSteps = computed(() => {
     </div>
   </section>
   <ShareCard :company="content?.participants?.prospect?.company" />
+  </div>
 </template>

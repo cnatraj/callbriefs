@@ -135,7 +135,9 @@ create table microsite_events (
   id              uuid primary key default uuid_generate_v4(),
   microsite_id    uuid not null references microsites(id) on delete cascade,
   prospect_email  text,
-  event_type      text not null check (event_type in ('viewed', 'section_viewed', 'cta_clicked')),
+  fingerprint_id  uuid,
+  session_id      uuid,
+  event_type      text not null check (event_type in ('session_start', 'session_end', 'viewed', 'section_viewed', 'cta_clicked')),
   section         text,
   time_spent_ms   integer,
   metadata        jsonb,
@@ -155,6 +157,8 @@ create index on microsites(workspace_id);
 create index on microsites(call_id);
 create index on microsites(slug);
 create index on microsite_events(microsite_id);
+create index on microsite_events(fingerprint_id);
+create index on microsite_events(session_id);
 
 
 -- ========================
@@ -279,9 +283,10 @@ grant select on table public.microsite_events  to authenticated;
 -- authenticated: update own profile row (RLS enforces "only own")
 grant update on table public.users to authenticated;
 
--- anon: prospect-facing reads + tracking writes
+-- anon: prospect-facing reads. Tracking writes go through the
+-- track-event edge function (service-role) — anon does NOT write events
+-- directly.
 grant select on table public.microsites        to anon;
-grant insert on table public.microsite_events  to anon;
 
 -- Default privileges so new tables auto-grant SELECT to authenticated.
 -- Stops the "create table, forget grant, hit 42501" loop.

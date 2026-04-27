@@ -62,6 +62,8 @@ const handleCopy = async () => {
       </div>
       <button
         type="button"
+        data-tracking-event="cta_clicked"
+        data-tracking-cta="copy_link"
         class="shrink-0 inline-flex items-center gap-[6px] px-[12px] py-[8px] rounded-[8px] bg-ink-900 text-bg text-[12.5px] font-semibold cursor-pointer border-0 transition-colors"
         :style="copied ? 'background: var(--ok);' : ''"
         @click="handleCopy"

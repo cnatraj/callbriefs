@@ -1,9 +1,10 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import MicrositeBody from '@/components/microsite/MicrositeBody.vue'
 import StickyCTA from '@/components/microsite/StickyCTA.vue'
 import { getMicrositeBySlug } from '@/services/microsites'
+import { initTracking, stopTracking } from '@/lib/tracking'
 
 const route = useRoute()
 
@@ -26,10 +27,12 @@ const fetchMicrosite = async (slug) => {
   }
   content.value = data.content
   createdAt.value = data.created_at
-  console.log('[microsite] fetched:', data)
+  initTracking(data.id)
 }
 
 watch(() => route.params.id, fetchMicrosite, { immediate: true })
+
+onBeforeUnmount(() => stopTracking())
 </script>
 
 <template>

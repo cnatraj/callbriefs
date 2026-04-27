@@ -89,7 +89,8 @@ const showPreview = () => {
 
 const openProspectView = () => {
   if (!slug.value) return
-  window.open(`/m/${slug.value}`, '_blank', 'noopener,noreferrer')
+  // ?track=false suppresses event tracking — see event-tracking.md.
+  window.open(`/m/${slug.value}?track=false`, '_blank', 'noopener,noreferrer')
 }
 
 const copied = ref(false)
