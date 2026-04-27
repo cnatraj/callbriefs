@@ -1,6 +1,15 @@
 <script setup>
 import { computed, ref } from "vue";
-import { IconDoc, IconCopy, IconMail, IconSparkles } from "@/components/icons";
+import {
+  IconDoc,
+  IconCopy,
+  IconMail,
+  IconSparkles,
+  IconRotateCcw,
+  IconArrowDownToLine,
+  IconUsers,
+  IconEye,
+} from "@/components/icons";
 
 const props = defineProps({
   slug: { type: String, default: null },
@@ -13,6 +22,41 @@ const props = defineProps({
 const hasNarrative = computed(
   () => !!props.overallNarrative?.narrative,
 );
+
+// Derive a small set of pills from overall.signals. Order = priority:
+// returning > forwarded > viewer count > engagement quality.
+const COMPLETION_LABELS = {
+  glance: "Quick glance",
+  skim: "Skimmed",
+  read: "Read through",
+  deep: "Deep read",
+};
+
+const overallPills = computed(() => {
+  const s = props.overallNarrative?.signals;
+  if (!s) return [];
+  const pills = [];
+
+  if (s.has_returning_viewer) {
+    pills.push({ label: "Returning viewer", icon: IconRotateCcw });
+  }
+  if (s.forwarded) {
+    pills.push({ label: "Forwarded internally", icon: IconArrowDownToLine });
+  }
+  if (typeof s.unique_fingerprints === "number" && s.unique_fingerprints >= 1) {
+    pills.push({
+      label: `${s.unique_fingerprints} ${s.unique_fingerprints === 1 ? "viewer" : "viewers"}`,
+      icon: IconUsers,
+    });
+  }
+  if (s.completion && COMPLETION_LABELS[s.completion]) {
+    pills.push({
+      label: COMPLETION_LABELS[s.completion],
+      icon: s.completion === "deep" ? IconSparkles : IconEye,
+    });
+  }
+  return pills;
+});
 
 const publicUrl = computed(() => {
   if (!props.slug) return "";
@@ -64,6 +108,24 @@ const handleSend = () => {
           <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
             {{ overallNarrative.narrative }}
           </p>
+
+          <div
+            v-if="overallPills.length"
+            class="mt-[14px] pt-[14px] border-t border-dashed border-ink-200 flex flex-wrap gap-[8px]"
+          >
+            <span
+              v-for="(pill, i) in overallPills"
+              :key="i"
+              class="inline-flex items-center gap-[6px] px-[10px] py-[4px] rounded-full text-[12px] font-medium"
+              style="
+                background: color-mix(in oklch, var(--accent) 22%, white 78%);
+                color: var(--accent-ink);
+              "
+            >
+              <component :is="pill.icon" :size="12" />
+              {{ pill.label }}
+            </span>
+          </div>
         </div>
       </div>
     </div>

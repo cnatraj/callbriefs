@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
 import StorySessionCard from "./StorySessionCard.vue";
+import { IconClock } from "@/components/icons";
 import { getSessionNarrativesForMicrosite } from "@/services/sessionNarratives";
 
 const props = defineProps({
@@ -94,6 +95,15 @@ const formatDeviceLabel = (type) => {
   return type;
 };
 
+const formatDuration = (ms) => {
+  if (typeof ms !== "number" || ms < 0) return null;
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return sec === 0 ? `${min}m` : `${min}m ${sec}s`;
+};
+
 const toCardData = (row, visitNumber) => {
   const signals = row.signals ?? {};
   const isReturning = visitNumber > 1;
@@ -123,9 +133,19 @@ const toCardData = (row, visitNumber) => {
     narrative: row.narrative ?? "",
     sections_reached: null,
     sections_total: null,
-    best_signal: signals.best_signal ? mapBestSignal(signals.best_signal) : null,
-    detail_pills: [],
+    best_signal: signals.best_signal
+      ? mapBestSignal(signals.best_signal)
+      : null,
+    detail_pills: buildDetailPills(signals),
   };
+};
+
+const buildDetailPills = (signals) => {
+  const pills = [];
+  const duration = formatDuration(signals.time_spent_ms);
+  if (duration)
+    pills.push({ label: `Time on site: ${duration}`, icon: IconClock });
+  return pills;
 };
 </script>
 

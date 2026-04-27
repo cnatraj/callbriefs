@@ -18,7 +18,7 @@ const props = defineProps({
 // Status pill (top): kind of viewer this is.
 const STATUS_MAP = {
   new_viewer: { label: "New viewer", icon: IconSparkles },
-  returning: { label: "Returning · 2nd visit", icon: IconRotateCcw },
+  returning: { label: "Returning visitor", icon: IconRotateCcw },
   first_view: { label: "First view", icon: IconEye },
   forwarded: { label: "Forwarded", icon: IconArrowDownToLine },
 };
@@ -52,7 +52,10 @@ const isMobileDevice = computed(() =>
 const formattedNarrative = computed(() => {
   const text = props.session.narrative ?? "";
   return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-900">$1</strong>')
+    .replace(
+      /\*\*(.+?)\*\*/g,
+      '<strong class="font-semibold text-ink-900">$1</strong>',
+    )
     .replace(
       /==(.+?)==/g,
       '<span class="px-[3px] py-[1px] rounded-[3px]" style="background: color-mix(in oklch, var(--accent) 32%, white 68%);">$1</span>',
@@ -159,9 +162,14 @@ const formattedNarrative = computed(() => {
       <span
         v-for="(pill, i) in session.detail_pills"
         :key="i"
-        class="inline-flex items-center px-[10px] py-[4px] rounded-full text-[12px] text-ink-700 bg-surface border border-ink-150"
+        class="inline-flex items-center gap-[6px] px-[10px] py-[4px] rounded-full text-[12px] text-ink-700 bg-surface border border-ink-150"
       >
-        {{ pill }}
+        <component
+          v-if="typeof pill === 'object' && pill.icon"
+          :is="pill.icon"
+          :size="12"
+        />
+        {{ typeof pill === "object" ? pill.label : pill }}
       </span>
 
       <span class="ml-auto mono text-[11px] text-ink-500">

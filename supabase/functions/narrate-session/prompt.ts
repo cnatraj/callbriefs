@@ -38,7 +38,12 @@ For both session and overall, return signals object with these keys:
 - best_signal: short string label naming the most important takeaway (e.g. 'returning_visitor', 'first_view', 'forwarded', 'no_engagement', 'cta_clicked').
 
 For SESSION signals only (not overall), additionally include:
-- device_type: 'mobile' | 'tablet' | 'desktop' | 'unknown'. Look at the device_type field on every event in this session and pick the one that appears most often. Ties go to whichever appeared first chronologically. If all events have null/missing device_type, return 'unknown'.
+- device_type: REQUIRED — always emit this field. One of 'mobile' | 'tablet' | 'desktop' | 'unknown'. Look at the device_type field on every event in this session and pick the one that appears most often. Ties go to whichever appeared first chronologically. If all events have null/missing device_type, return 'unknown'. Never omit this field.
+- time_spent_ms: REQUIRED — always emit. Integer (milliseconds). Compute as (last event's created_at) − (first event's created_at) for this session. If only one event exists, return 0.
+
+For OVERALL signals only (not session), additionally include:
+- unique_fingerprints: integer. Count of distinct fingerprint_id values across this session and prior_narratives combined. Treat null/missing fingerprint_id as its own bucket only if it's the only data we have; otherwise ignore null fingerprints when counting.
+- has_returning_viewer: boolean. True if any single fingerprint_id appears in more than one session (this session counts). False if every fingerprint has exactly one session.
 
 NON-ENGAGEMENT CASE
 If the session has only session_start + session_end with no section_viewed events, narrate it simply: "<Name> opened the microsite but didn't engage with the content."
@@ -55,6 +60,7 @@ Return strict JSON. No prose outside the JSON. Shape:
       "forwarded": false,
       "completion": "read",
       "device_type": "mobile",
+      "time_spent_ms": 184000,
       "best_signal": "first_view"
     }
   },
@@ -65,7 +71,9 @@ Return strict JSON. No prose outside the JSON. Shape:
       "returned": false,
       "forwarded": false,
       "completion": "read",
-      "best_signal": "first_view"
+      "best_signal": "first_view",
+      "unique_fingerprints": 2,
+      "has_returning_viewer": true
     }
   }
 }`
