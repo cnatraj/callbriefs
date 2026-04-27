@@ -128,11 +128,23 @@ A document-level `click` listener walks up via `closest('[data-tracking-event]')
 - Read-time sessionization or narrative generation — Phase 3.
 
 ### Phase 3 — Story view
-- Sessionize raw events (server-side SQL view or store-side reducer; cluster by `fingerprint_id` + 30min idle window per CLAUDE.md, and treat dangling sessions per the rule above).
-- Hybrid narrative generator: template for the timestamps/sections/durations + LLM for the qualitative read.
-- Persist generated narratives so we don't pay LLM inference on every page load.
-- Session feed UI replaces `StoryEmpty.vue` when `hasViews` flips true.
-- Notification surfaces (bell icon, push, email digest).
+
+**Pass A — narration plumbing (this phase).**
+- Database webhook on `microsite_events` insert filtered to `event_type = 'session_end'` triggers the `narrate-session` edge function.
+- One LLM call per session_end. Returns JSON with two nodes: `session` (per-session narrative + structured signals) and `overall` (rolling rollup across all sessions for this microsite).
+- `microsite_session_narratives` table stores per-session entries (status: `processing | ready | failed`, same flow as documents/microsites).
+- `microsites.overall_narrative` jsonb column is the denormalized rollup, refreshed on every session_end.
+- Retry once on LLM failure, then mark `failed`.
+- The function fetches: events for the session, prior `ready` narratives on the same microsite. Microsite content is **not** passed for MVP — section names are descriptive enough on their own. (TODO: pass microsite content for richer narration.)
+- Rapid-refresh handling lives in the prompt — the LLM merges sub-30s sessions for the same fingerprint.
+
+**Pass B — Story feed UI (later).**
+- `StoryEmpty.vue` is replaced with the session-feed view when `microsite_session_narratives` has rows for the current microsite.
+- Overall narrative + signals shown at the top of the feed.
+- Each session is a card; signals drive an icon + accent treatment (returning visitor gets a celebratory lift per CLAUDE.md).
+
+**Notifications (later still).**
+- Bell icon, email digest, push. Webhook-driven from the same `session_end` insert.
 
 ---
 

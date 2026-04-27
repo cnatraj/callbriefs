@@ -34,6 +34,14 @@ const ALLOWED_EVENT_TYPES = new Set([
   "cta_clicked",
 ]);
 
+// Tablet check first because iPad UAs sometimes include "Mobi" too.
+const detectDevice = (ua: string | null): string => {
+  if (!ua) return "unknown";
+  if (/Tablet|iPad/i.test(ua)) return "tablet";
+  if (/Mobi/i.test(ua)) return "mobile";
+  return "desktop";
+};
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -89,13 +97,15 @@ Deno.serve(async (req) => {
   }
 
   // Whitelist columns we actually want to write. Drops anything weird
-  // the client tries to slip in.
+  // the client tries to slip in. device_type is derived server-side from
+  // the request user-agent, not trusted from the body.
   const row = {
     microsite_id: body.microsite_id,
     event_type: body.event_type,
     fingerprint_id: body.fingerprint_id ?? null,
     session_id: body.session_id ?? null,
     section: body.section ?? null,
+    device_type: detectDevice(req.headers.get("user-agent")),
     metadata: body.metadata ?? null,
   };
 
