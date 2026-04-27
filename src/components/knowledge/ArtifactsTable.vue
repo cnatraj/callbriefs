@@ -73,7 +73,10 @@ const MIME_TO_KIND = {
 const kindOf = (mime) => MIME_TO_KIND[mime] ?? "other";
 
 const rows = computed(() => {
-  const all = documents.documents.map((d) => ({ ...d, kind: kindOf(d.mime_type) }));
+  const all = documents.documents.map((d) => ({
+    ...d,
+    kind: kindOf(d.mime_type),
+  }));
   if (filter.value === "all") return all;
   return all.filter((d) => d.kind === filter.value);
 });
@@ -173,9 +176,7 @@ const onRowClick = (doc) => artifactDrawer.open(doc.id);
     </div>
 
     <!-- Table -->
-    <div
-      class="bg-surface border border-ink-150 rounded-[12px] overflow-hidden"
-    >
+    <div class="bg-surface border border-ink-150 rounded-[12px]">
       <!-- Column header -->
       <div
         class="grid items-center px-[18px] py-[10px] bg-bg border-b border-ink-150 eyebrow"
@@ -246,7 +247,9 @@ const onRowClick = (doc) => artifactDrawer.open(doc.id);
         </div>
 
         <!-- Uploaded -->
-        <div class="text-ink-700 text-[13px]">{{ formatDate(d.created_at) }}</div>
+        <div class="text-ink-700 text-[13px]">
+          {{ formatDate(d.created_at) }}
+        </div>
 
         <!-- Status -->
         <div>
