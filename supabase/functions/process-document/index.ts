@@ -22,7 +22,11 @@ import Anthropic from "npm:@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "./prompt.ts";
 
 const MODEL = "claude-sonnet-4-6";
-const MAX_TOKENS = 1500;
+// 1500 was too tight for non-trivial documents — Claude's extraction
+// JSON would hit the cap mid-string and JSON.parse would 500. 8000
+// matches generate-microsite. Defensive: also detect stop_reason
+// 'max_tokens' and treat that as a soft failure rather than crashing.
+const MAX_TOKENS = 8000;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -200,6 +204,14 @@ Deno.serve(async (req) => {
     const textBlock = msg.content.find((b) => b.type === "text");
     if (!textBlock || textBlock.type !== "text") {
       throw new Error("No text content in Claude response");
+    }
+
+    // If the response was cut off by the token cap, JSON.parse would
+    // 500 with "Unterminated string". Bail with a clear message instead.
+    if (msg.stop_reason === "max_tokens") {
+      throw new Error(
+        `Claude hit max_tokens (${MAX_TOKENS}) before finishing the JSON. Document may be too long; consider raising MAX_TOKENS or trimming the input.`,
+      );
     }
 
     const raw = textBlock.text.trim();
