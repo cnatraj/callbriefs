@@ -18,7 +18,7 @@ export const getCallWithMicrosite = (callId) =>
   supabase
     .from('calls')
     .select(
-      'id, org_id, workspace_id, transcript, status, created_at, microsites(id, slug, content, status)',
+      'id, org_id, workspace_id, transcript, status, created_at, microsites(id, slug, content, status, overall_narrative)',
     )
     .eq('id', callId)
     .single()

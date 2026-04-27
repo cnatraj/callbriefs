@@ -5,6 +5,9 @@ import { IconCalendar, IconArrowRight } from '@/components/icons'
 
 const props = defineProps({
   briefOwner: { type: Object, default: null },
+  // 'fixed' pins to viewport (prospect page).
+  // 'sticky' sticks to bottom of the nearest scroll container (preview drawer).
+  mode: { type: String, default: 'fixed' },
 })
 
 const ownerName = computed(
@@ -14,7 +17,12 @@ const ownerName = computed(
 
 <template>
   <div
-    class="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 p-[9px] border border-ink-150 rounded-[14px]"
+    class="z-10 flex items-center gap-2 p-[9px] border border-ink-150 rounded-[14px]"
+    :class="
+      mode === 'sticky'
+        ? 'sticky bottom-4 self-center'
+        : 'fixed bottom-4 left-1/2 -translate-x-1/2'
+    "
     style="
       width: calc(100% - 32px);
       max-width: 420px;

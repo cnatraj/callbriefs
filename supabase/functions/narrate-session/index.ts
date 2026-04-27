@@ -95,6 +95,7 @@ const buildUserMessage = (params: {
     event_type: e.event_type,
     section: e.section,
     metadata: e.metadata,
+    device_type: e.device_type,
     created_at: e.created_at,
   }));
 
@@ -127,7 +128,7 @@ const narrate = async (narrativeId: string, record: any) => {
   // Pull all events for this session, ordered by time.
   const { data: events, error: eventsErr } = await supabase
     .from("microsite_events")
-    .select("event_type, section, metadata, created_at")
+    .select("event_type, section, metadata, device_type, created_at")
     .eq("session_id", session_id)
     .order("created_at", { ascending: true });
 

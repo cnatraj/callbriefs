@@ -37,6 +37,9 @@ For both session and overall, return signals object with these keys:
 - completion: 'glance' | 'skim' | 'read' | 'deep'. 'glance' = <3s total. 'skim' = entered multiple sections briefly. 'read' = spent 10–30s on at least one section. 'deep' = >30s on a section, or revisited sections.
 - best_signal: short string label naming the most important takeaway (e.g. 'returning_visitor', 'first_view', 'forwarded', 'no_engagement', 'cta_clicked').
 
+For SESSION signals only (not overall), additionally include:
+- device_type: 'mobile' | 'tablet' | 'desktop' | 'unknown'. Look at the device_type field on every event in this session and pick the one that appears most often. Ties go to whichever appeared first chronologically. If all events have null/missing device_type, return 'unknown'.
+
 NON-ENGAGEMENT CASE
 If the session has only session_start + session_end with no section_viewed events, narrate it simply: "<Name> opened the microsite but didn't engage with the content."
 
@@ -51,6 +54,7 @@ Return strict JSON. No prose outside the JSON. Shape:
       "returned": false,
       "forwarded": false,
       "completion": "read",
+      "device_type": "mobile",
       "best_signal": "first_view"
     }
   },

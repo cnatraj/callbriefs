@@ -122,6 +122,14 @@ export const IconArrowDownToLine = make(() => [
   h('path', { d: 'm6 11 6 6 6-6' }),
   h('path', { d: 'M5 21h14' }),
 ])
+export const IconMonitor = make(() => [
+  h('rect', { x: 2, y: 4, width: 20, height: 13, rx: 2 }),
+  h('path', { d: 'M8 21h8M12 17v4' }),
+])
+export const IconPhone = make(() => [
+  h('rect', { x: 6, y: 2, width: 12, height: 20, rx: 2 }),
+  h('path', { d: 'M11 18h2' }),
+])
 
 // Speed / momentum
 export const IconZap = make(path('M13 2 3 14h7l-1 8 10-12h-7l1-8z'))

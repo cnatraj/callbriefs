@@ -1,114 +1,116 @@
 <script setup>
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useCallsStore } from '@/stores/calls'
-import { usePreviewDrawer } from '@/composables/usePreviewDrawer'
-import BriefHero from '@/components/brief/BriefHero.vue'
-import StoryEmpty from '@/components/brief/StoryEmpty.vue'
-import Story from '@/components/brief/Story.vue'
-import SignalsPreview from '@/components/brief/SignalsPreview.vue'
-import ReminderStrip from '@/components/brief/ReminderStrip.vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useCallsStore } from "@/stores/calls";
+import { usePreviewDrawer } from "@/composables/usePreviewDrawer";
+import BriefHero from "@/components/brief/BriefHero.vue";
+import OverallStory from "@/components/brief/OverallStory.vue";
+import SessionStories from "@/components/brief/SessionStories.vue";
+import SignalsPreview from "@/components/brief/SignalsPreview.vue";
+import ReminderStrip from "@/components/brief/ReminderStrip.vue";
 
 const props = defineProps({
   id: { type: String, required: true },
-})
+});
 
-const router = useRouter()
-const route = useRoute()
-const calls = useCallsStore()
-const previewDrawer = usePreviewDrawer()
+const router = useRouter();
+const route = useRoute();
+const calls = useCallsStore();
+const previewDrawer = usePreviewDrawer();
 
 // On initial mount, send users to Processing if the brief isn't ready.
 // Covers refresh, deep-link, and direct-URL cases.
 const redirectIfNotReady = (status) => {
-  if (status === 'processing' || status === 'failed') {
-    router.replace(`/briefs/${props.id}/processing`)
+  if (status === "processing" || status === "failed") {
+    router.replace(`/briefs/${props.id}/processing`);
   }
-}
+};
 
 const maybeAutoOpenPreview = () => {
-  if (route.query.preview !== 'true') return
-  if (!calls.microsite?.id) return
-  previewDrawer.open(calls.microsite.id)
-}
+  if (route.query.preview !== "true") return;
+  if (!calls.microsite?.id) return;
+  previewDrawer.open(calls.microsite.id);
+};
 
 onMounted(async () => {
-  await calls.loadCall(props.id)
-  redirectIfNotReady(calls.activeCall?.status)
-  maybeAutoOpenPreview()
-})
-onBeforeUnmount(() => calls.reset())
+  await calls.loadCall(props.id);
+  redirectIfNotReady(calls.activeCall?.status);
+  maybeAutoOpenPreview();
+});
+onBeforeUnmount(() => calls.reset());
 
 watch(
   () => props.id,
   async (next) => {
-    if (!next) return
-    await calls.loadCall(next)
-    redirectIfNotReady(calls.activeCall?.status)
-    maybeAutoOpenPreview()
+    if (!next) return;
+    await calls.loadCall(next);
+    redirectIfNotReady(calls.activeCall?.status);
+    maybeAutoOpenPreview();
   },
-)
+);
 
-const status = computed(() => calls.activeCall?.status ?? null)
-const isReady = computed(() => status.value === 'ready')
+const status = computed(() => calls.activeCall?.status ?? null);
+const isReady = computed(() => status.value === "ready");
 const isMissing = computed(
   () => !calls.loading && !calls.activeCall && !!calls.loadedCallId,
-)
+);
 
-const microsite = computed(() => calls.microsite)
-const content = computed(() => microsite.value?.content ?? null)
-const slug = computed(() => microsite.value?.slug ?? null)
+const microsite = computed(() => calls.microsite);
+const content = computed(() => microsite.value?.content ?? null);
+const slug = computed(() => microsite.value?.slug ?? null);
 
-const briefTitle = computed(
-  () => content.value?.header?.title || 'Brief',
-)
+const briefTitle = computed(() => content.value?.header?.title || "Brief");
 
 const prospectFirstName = computed(() => {
   const name =
     calls.activeCall?.prospect_name ||
     content.value?.participants?.prospect?.firstName ||
-    content.value?.participants?.prospect?.name
-  if (!name) return 'your prospect'
-  return name.trim().split(/\s+/)[0]
-})
+    content.value?.participants?.prospect?.name;
+  if (!name) return "your prospect";
+  return name.trim().split(/\s+/)[0];
+});
 
 const prospectCompany = computed(
   () =>
     calls.activeCall?.prospect_company ||
     content.value?.participants?.prospect?.company ||
-    'their company',
-)
+    "their company",
+);
 
-// Story-feed switch — false until event tracking lands.
-const hasViews = computed(() => false)
+// Story-feed switch. Uses the overall_narrative as a proxy for "does
+// this microsite have any narrated sessions yet" — narrate-session
+// writes both microsite_session_narratives rows AND updates
+// microsites.overall_narrative in the same flow, so this flag flips
+// once the first narration lands.
+const hasViews = computed(() => !!microsite.value?.overall_narrative);
 
 const showPreview = () => {
-  if (!microsite.value?.id) return
-  previewDrawer.open(microsite.value.id)
-}
+  if (!microsite.value?.id) return;
+  previewDrawer.open(microsite.value.id);
+};
 
 const openProspectView = () => {
-  if (!slug.value) return
+  if (!slug.value) return;
   // ?track=false suppresses event tracking — see event-tracking.md.
-  window.open(`/m/${slug.value}?track=false`, '_blank', 'noopener,noreferrer')
-}
+  window.open(`/m/${slug.value}?track=false`, "_blank", "noopener,noreferrer");
+};
 
-const copied = ref(false)
-let copyResetTimer = null
+const copied = ref(false);
+let copyResetTimer = null;
 const copyShareLink = async () => {
-  if (!slug.value) return
-  const url = `${window.location.origin}/m/${slug.value}`
+  if (!slug.value) return;
+  const url = `${window.location.origin}/m/${slug.value}`;
   try {
-    await navigator.clipboard.writeText(url)
-    copied.value = true
-    if (copyResetTimer) clearTimeout(copyResetTimer)
-    copyResetTimer = setTimeout(() => (copied.value = false), 1500)
+    await navigator.clipboard.writeText(url);
+    copied.value = true;
+    if (copyResetTimer) clearTimeout(copyResetTimer);
+    copyResetTimer = setTimeout(() => (copied.value = false), 1500);
   } catch (err) {
-    console.error('[brief-detail] clipboard write failed:', err)
+    console.error("[brief-detail] clipboard write failed:", err);
   }
-}
+};
 
-const goBriefs = () => router.push('/briefs')
+const goBriefs = () => router.push("/briefs");
 </script>
 
 <template>
@@ -150,15 +152,15 @@ const goBriefs = () => router.push('/briefs')
         @open-as-prospect="openProspectView"
       />
 
-      <StoryEmpty
-        v-if="!hasViews"
+      <OverallStory
         :slug="slug"
         :prospect-first-name="prospectFirstName"
         :prospect-company="prospectCompany"
+        :overall-narrative="microsite?.overall_narrative"
       />
-      <Story v-else :slug="slug" />
+      <SessionStories v-if="hasViews" :microsite-id="microsite?.id" />
 
-      <SignalsPreview :prospect-first-name="prospectFirstName" />
+      <SignalsPreview v-else :prospect-first-name="prospectFirstName" />
 
       <ReminderStrip :prospect-first-name="prospectFirstName" />
     </div>

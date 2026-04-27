@@ -1,34 +1,35 @@
 <script setup>
-import { ref, watch } from 'vue'
-import AppDrawer from '@/components/AppDrawer.vue'
-import MicrositeBody from '@/components/microsite/MicrositeBody.vue'
-import { usePreviewDrawer } from '@/composables/usePreviewDrawer'
-import { getMicrositeById } from '@/services/microsites'
+import { ref, watch } from "vue";
+import AppDrawer from "@/components/AppDrawer.vue";
+import MicrositeBody from "@/components/microsite/MicrositeBody.vue";
+import StickyCTA from "@/components/microsite/StickyCTA.vue";
+import { usePreviewDrawer } from "@/composables/usePreviewDrawer";
+import { getMicrositeById } from "@/services/microsites";
 
-const { isOpen, activeMicrositeId, close } = usePreviewDrawer()
+const { isOpen, activeMicrositeId, close } = usePreviewDrawer();
 
-const microsite = ref(null)
-const loading = ref(false)
+const microsite = ref(null);
+const loading = ref(false);
 
 // Fetch whenever the active id changes (and the drawer is open).
 // Same id → no refetch (microsite stays in place if drawer reopens).
 watch(
   [isOpen, activeMicrositeId],
   async ([open, id]) => {
-    if (!open || !id) return
-    if (microsite.value?.id === id) return
-    loading.value = true
-    microsite.value = null
-    const { data, error } = await getMicrositeById(id)
+    if (!open || !id) return;
+    if (microsite.value?.id === id) return;
+    loading.value = true;
+    microsite.value = null;
+    const { data, error } = await getMicrositeById(id);
     if (error) {
-      console.error('[preview] fetch error:', error)
+      console.error("[preview] fetch error:", error);
     } else {
-      microsite.value = data
+      microsite.value = data;
     }
-    loading.value = false
+    loading.value = false;
   },
   { immediate: true },
-)
+);
 </script>
 
 <template>
@@ -41,14 +42,15 @@ watch(
         class="text-[18px] font-semibold text-ink-900 truncate"
         style="letter-spacing: -0.015em"
       >
-        {{ microsite?.content?.title ?? 'Brief' }}
+        {{ microsite?.content?.title ?? "Brief" }}
       </div>
     </template>
 
     <!-- Dotted backdrop fills the body area. Negative margins cancel the
-         AppDrawer's px-6 py-6 so the dots go edge-to-edge. -->
+         AppDrawer's px-6 py-6 so the dots go edge-to-edge. flex-col so
+         StickyCTA can stack below MicrositeBody and stick to bottom. -->
     <div
-      class="-mx-6 -my-6 min-h-full flex justify-center px-[30px] py-[32px]"
+      class="-mx-6 -my-6 min-h-full flex flex-col items-center px-[30px] py-[32px]"
       style="
         background: var(--bg);
         background-image: radial-gradient(
@@ -65,12 +67,20 @@ watch(
       >
         Loading preview…
       </div>
-      <MicrositeBody
-        v-else
-        :content="microsite?.content"
-        :created-at="microsite?.created_at"
-        :slug="microsite?.slug"
-      />
+      <template v-else>
+        <MicrositeBody
+          :content="microsite?.content"
+          :created-at="microsite?.created_at"
+          :slug="microsite?.slug"
+          class="mb-10"
+        />
+        <!-- Spacer pushes the CTA to the bottom when content fits. -->
+        <div class="flex-1 w-full" />
+        <StickyCTA
+          mode="sticky"
+          :brief-owner="microsite?.content?.brief_owner"
+        />
+      </template>
     </div>
   </AppDrawer>
 </template>

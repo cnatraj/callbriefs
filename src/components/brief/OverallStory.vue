@@ -1,12 +1,18 @@
 <script setup>
 import { computed, ref } from "vue";
-import { IconDoc, IconCopy, IconMail } from "@/components/icons";
+import { IconDoc, IconCopy, IconMail, IconSparkles } from "@/components/icons";
 
 const props = defineProps({
   slug: { type: String, default: null },
   prospectFirstName: { type: String, default: "Maya" },
   prospectCompany: { type: String, default: "Acuity Robotics" },
+  // microsites.overall_narrative — { narrative, signals } | null
+  overallNarrative: { type: Object, default: null },
 });
+
+const hasNarrative = computed(
+  () => !!props.overallNarrative?.narrative,
+);
 
 const publicUrl = computed(() => {
   if (!props.slug) return "";
@@ -27,7 +33,7 @@ const handleCopy = async () => {
       copied.value = false;
     }, 1500);
   } catch (err) {
-    console.error("[story-empty] clipboard write failed:", err);
+    console.error("[overall-story] clipboard write failed:", err);
   }
 };
 
@@ -40,6 +46,30 @@ const handleSend = () => {
   <section
     class="rounded-[14px] border border-ink-150 bg-surface overflow-hidden"
   >
+    <!-- Has narrative: show the LLM's overall story across all sessions -->
+    <div v-if="hasNarrative" class="px-[28px] py-[28px]">
+      <div class="flex items-start gap-[16px]">
+        <span
+          class="w-[44px] h-[44px] rounded-[10px] grid place-items-center shrink-0"
+          style="
+            background: color-mix(in oklch, var(--accent) 22%, white 78%);
+            color: var(--accent-ink);
+          "
+        >
+          <IconSparkles :size="20" />
+        </span>
+
+        <div class="flex-1 min-w-0">
+          <div class="eyebrow text-ink-500">Overall story</div>
+          <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
+            {{ overallNarrative.narrative }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- No narrative yet: default explainer + next-step footer -->
+    <template v-else>
     <!-- White: waiting / explainer -->
     <div class="px-[28px] py-[28px]">
       <div class="flex items-start gap-[16px]">
@@ -132,6 +162,7 @@ const handleSend = () => {
         </button>
       </div>
     </div>
+    </template>
   </section>
 </template>
 
