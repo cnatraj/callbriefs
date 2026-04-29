@@ -20,6 +20,7 @@ B2B SaaS for sales reps. Turns a call transcript or recording into a personalize
 - [docs/callbriefs-architecture.md](docs/callbriefs-architecture.md) — code layout, service/store layer, conventions
 - [docs/callbriefs-schema.sql](docs/callbriefs-schema.sql) — current consolidated DB schema (apply to a fresh Supabase project)
 - [design.md](design.md) — design system (colors, typography, spacing, components)
+- [event-tracking.md](event-tracking.md) — prospect-side analytics: lifecycle, events, narration pipeline, decisions
 - [sql/](sql/) — migration files, apply in order (see below)
 
 ## Architecture in 30 seconds

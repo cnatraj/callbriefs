@@ -4,7 +4,12 @@ Follow-up items flagged during development. Not blockers — things worth revisi
 
 ## Big next pieces
 
-- **Event tracking + Story session feed** — see CLAUDE.md "Story view" for the design intent. Schema (`microsite_events`) already exists. Open design questions: viewer identity (anonymous vs known), forward-tracking (per-recipient unique links?), notification cadence (push on first view? daily digest?), self-view filtering (rep's own preview hits shouldn't count). Sessionize raw events on read (cluster by viewer + 30-min idle window). Hybrid narrative generator: template for the bones + LLM for the qualitative read.
+- **Event tracking + Story session feed** — Phases 1, 2, 3 shipped (lifecycle, events, narration). See [event-tracking.md](event-tracking.md). Remaining polish items:
+  - **Microsite-creation marker** — DB trigger that inserts a row into `microsite_session_narratives` when a microsite is created, so the Story feed has a "Brief created" anchor at the bottom. Plus one-time backfill SQL for existing microsites. Design discussed; not built. Drops `SignalsPreview` from Detail.vue once shipped (creation row guarantees the feed isn't empty).
+  - **Bold + highlight tokens in narratives** — `StorySessionCard` already parses `**bold**` / `==highlight==`, but the LLM prompt doesn't emit them. Update `narrate-session/prompt.ts` to teach the model to mark key facts and signals; we get richer rendering for free.
+  - **`sections_reached` / `sections_total`** — `StorySessionCard` shows the read-map line but the numbers are null. Compute in `SessionStories` from a per-session events query (count distinct `section_viewed.section`s vs total sections in the microsite content).
+  - **`is_active` / `is_still_reading`** — currently always false. Need a "live session" signal — e.g., session_start exists but session_end doesn't AND last event is recent. Useful for the citron-tinted "still reading" pill.
+  - **Notifications** — bell icon, email digest, push. Webhook-driven from the same `session_end` insert (Phase 3 placeholder).
 - **Workspace pitch (the "Why GTR" tab)** — make it static per-workspace, generated once when artifacts are uploaded. New edge function `generate-pitch` triggered from inside `process-document` after status=ready. Writes to `workspaces.pitch_content` jsonb column. `generate-microsite` reads it and copies into `content.pitch` at brief generation time (same denormalize pattern as `brief_owner`/`org`).
 
 ## Performance
@@ -32,6 +37,10 @@ Follow-up items flagged during development. Not blockers — things worth revisi
 - **Edge function error monitoring.** [supabase/functions/process-document/index.ts](supabase/functions/process-document/index.ts) currently just `console.error`s. Wire Sentry / Logtail / etc. before prod so failed Claude calls or permission issues surface somewhere that pages you.
 
 ## UX polish
+
+- **Document processing — retry on failed status.** Today `process-document` is webhook-only; failed extractions have no recovery path from the UI. Plan: add CORS handling + accept `{ documentId }` body to the function (same shape as `generate-microsite`'s retry path), tweak the idempotency check to allow re-fire on `failed`/`uploaded` (bail on `ready`/`processing`). Add `retryProcessDocument` service fn + a `retryProcess` action on the documents store (optimistic flip to `processing`, leverages the existing polling watcher). UI: small retry icon button in `ArtifactsTable.vue` next to the status pill when `status === 'failed'`.
+
+- **Knowledge artifact menu — Delete button hidden.** The 3-dot dropdown in `ArtifactsTable.vue` uses `position: absolute; top-full`, but the table wrapper has `overflow-hidden` (for rounded corners). Menu pops below bottom-row, gets clipped, looks blank. Fix: change menu to `position: fixed`, capture trigger's `getBoundingClientRect()` on toggle, set `top` / `right` from that. Keep the existing `data-row-menu` attribute on both trigger and menu so click-outside detection still works. Also close the menu on scroll.
 
 - **Replace `window.confirm()` with a proper modal.** Used in the document delete flow ([src/components/knowledge/ArtifactsTable.vue](src/components/knowledge/ArtifactsTable.vue) + [src/components/knowledge/ArtifactDrawer.vue](src/components/knowledge/ArtifactDrawer.vue)). A shared `ConfirmDialog` component using `AppModal` would cover this and any future destructive actions (remove member, delete workspace, delete org).
 
