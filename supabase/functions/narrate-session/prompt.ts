@@ -29,6 +29,13 @@ WHAT TO READ FROM PRIOR NARRATIVES
 RAPID-REFRESH HANDLING
 - If multiple sessions for the same fingerprint occurred within 30 seconds of each other, treat them as one continuous engagement, not separate visits.
 
+HIGHLIGHTING KEY PHRASES
+- In session.narrative, wrap 1–2 key phrases in **bold** (e.g. "spent **over a minute on the customer story**"). Use bold for the most important fact a rep should notice — the section they lingered on, the CTA they clicked, what makes this session different from a glance.
+- In overall.narrative, wrap 1–3 key phrases in ==highlight== (e.g. "==returned for a second visit=="). Use highlight for the load-bearing signals across all sessions — returning visitor, forwarding, deep engagement, key sections of interest.
+- A "key phrase" is a few words, not a full sentence.
+- Don't highlight names, generic verbs, or filler. Highlight what tells the rep *what changed* or *what to act on*.
+- Don't mix tokens: bold appears only in session.narrative; ==highlight== appears only in overall.narrative.
+
 SIGNALS — STRUCTURED OUTPUT
 For both session and overall, return signals object with these keys:
 - engaged: boolean. True if the viewer spent meaningful time (>10s on at least one section) or interacted (clicked a CTA).

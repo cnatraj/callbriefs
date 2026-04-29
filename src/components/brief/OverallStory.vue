@@ -19,9 +19,16 @@ const props = defineProps({
   overallNarrative: { type: Object, default: null },
 });
 
-const hasNarrative = computed(
-  () => !!props.overallNarrative?.narrative,
-);
+const hasNarrative = computed(() => !!props.overallNarrative?.narrative);
+
+// ==highlight== → citron-tinted span. Bold is reserved for per-session narratives.
+const formattedNarrative = computed(() => {
+  const text = props.overallNarrative?.narrative ?? "";
+  return text.replace(
+    /==(.+?)==/g,
+    '<span class="px-[3px] py-[1px] rounded-[3px]" style="background: color-mix(in oklch, var(--accent) 32%, white 68%);">$1</span>',
+  );
+});
 
 // Derive a small set of pills from overall.signals. Order = priority:
 // returning > forwarded > viewer count > engagement quality.
@@ -91,23 +98,20 @@ const handleSend = () => {
     class="rounded-[14px] border border-ink-150 bg-surface overflow-hidden"
   >
     <!-- Has narrative: show the LLM's overall story across all sessions -->
-    <div v-if="hasNarrative" class="px-[28px] py-[28px]">
+    <div v-if="!hasNarrative" class="px-[28px] py-[28px]">
       <div class="flex items-start gap-[16px]">
         <span
-          class="w-[44px] h-[44px] rounded-[10px] grid place-items-center shrink-0"
-          style="
-            background: color-mix(in oklch, var(--accent) 22%, white 78%);
-            color: var(--accent-ink);
-          "
+          class="w-[44px] h-[44px] rounded-[10px] grid place-items-center bg-ink-100 text-ink-500 shrink-0"
         >
           <IconSparkles :size="20" />
         </span>
 
         <div class="flex-1 min-w-0">
           <div class="eyebrow text-ink-500">Overall story</div>
-          <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
-            {{ overallNarrative.narrative }}
-          </p>
+          <p
+            class="mt-[14px] text-[16px] leading-[1.6] text-ink-900"
+            v-html="formattedNarrative"
+          ></p>
 
           <div
             v-if="overallPills.length"
@@ -132,98 +136,98 @@ const handleSend = () => {
 
     <!-- No narrative yet: default explainer + next-step footer -->
     <template v-else>
-    <!-- White: waiting / explainer -->
-    <div class="px-[28px] py-[28px]">
-      <div class="flex items-start gap-[16px]">
-        <span
-          class="w-[44px] h-[44px] rounded-[10px] grid place-items-center bg-ink-100 text-ink-500 shrink-0"
-        >
-          <IconDoc :size="20" />
-        </span>
+      <!-- White: waiting / explainer -->
+      <div class="px-[28px] py-[28px]">
+        <div class="flex items-start gap-[16px]">
+          <span
+            class="w-[44px] h-[44px] rounded-[10px] grid place-items-center bg-ink-100 text-ink-500 shrink-0"
+          >
+            <IconDoc :size="20" />
+          </span>
 
-        <div class="flex-1 min-w-0">
-          <div class="eyebrow text-ink-500">
-            The Story · Waiting for first view
+          <div class="flex-1 min-w-0">
+            <div class="eyebrow text-ink-500">
+              The Story · Waiting for first view
+            </div>
+
+            <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
+              Your microsite for
+              <span class="font-semibold">{{ prospectCompany }}</span> is live
+              and the link is ready to be shared. To get started, copy the link
+              above and paste it into an email to Kathi.
+            </p>
+            <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
+              <span class="text-ink-500">
+                The moment they open it, you'll see which sections they actually
+                read, which they skimmed, and whether they came back —
+              </span>
+
+              <span
+                class="px-[4px] py-[1px] rounded-[3px]"
+                style="
+                  background: color-mix(in oklch, var(--accent) 32%, white 68%);
+                "
+              >
+                so you always know the right time to follow up.
+              </span>
+            </p>
           </div>
+        </div>
+      </div>
 
-          <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
-            Your microsite for
-            <span class="font-semibold">{{ prospectCompany }}</span> is live and
-            the link is ready to be shared. To get started, copy the link above
-            and paste it into an email to Kathi.
-          </p>
-          <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
-            <span class="text-ink-500">
-              The moment they open it, you'll see which sections they actually
-              read, which they skimmed, and whether they came back —
-            </span>
-
+      <!-- Dark: next-step action footer (edge-to-edge inside the card) -->
+      <div
+        class="px-[28px] py-[22px] flex items-center gap-[100px]"
+        style="background: var(--ink-900)"
+      >
+        <div class="flex-1 min-w-0 flex flex-col gap-[10px]">
+          <div class="inline-flex items-center gap-[8px]">
             <span
-              class="px-[4px] py-[1px] rounded-[3px]"
+              class="w-[6px] h-[6px] rounded-full"
+              style="background: var(--accent)"
+            />
+            <span
+              class="text-[11px] font-medium uppercase"
               style="
-                background: color-mix(in oklch, var(--accent) 32%, white 68%);
+                letter-spacing: 0.06em;
+                color: color-mix(in oklch, var(--bg) 55%, transparent);
               "
             >
-              so you always know the right time to follow up.
+              Suggested Next Move
             </span>
+          </div>
+          <p class="text-[19px] leading-[1.55]" style="color: var(--bg)">
+            Your microsite is ready. Send it to {{ prospectCompany }} while the
+            call is still fresh.
+          </p>
+
+          <p class="text-[15px] leading-[1.55] text-ink-300">
+            The best follow-ups occur within 2 to 4 hours after the call. The
+            story will start writing itself the moment they open it.
           </p>
         </div>
-      </div>
-    </div>
 
-    <!-- Dark: next-step action footer (edge-to-edge inside the card) -->
-    <div
-      class="px-[28px] py-[22px] flex items-center gap-[100px]"
-      style="background: var(--ink-900)"
-    >
-      <div class="flex-1 min-w-0 flex flex-col gap-[10px]">
-        <div class="inline-flex items-center gap-[8px]">
-          <span
-            class="w-[6px] h-[6px] rounded-full"
-            style="background: var(--accent)"
-          />
-          <span
-            class="text-[11px] font-medium uppercase"
-            style="
-              letter-spacing: 0.06em;
-              color: color-mix(in oklch, var(--bg) 55%, transparent);
-            "
+        <div class="flex items-center gap-[10px] shrink-0">
+          <button
+            type="button"
+            :disabled="!publicUrl"
+            class="dark-btn inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] border text-[12.5px] font-medium cursor-pointer disabled:cursor-not-allowed"
+            @click="handleCopy"
           >
-            Suggested Next Move
-          </span>
+            <IconCopy :size="13" />
+            {{ copied ? "Copied" : "Copy link" }}
+          </button>
+
+          <button
+            type="button"
+            class="dark-btn inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] border text-[12.5px] font-medium cursor-pointer"
+            @click="handleSend"
+          >
+            <IconMail :size="13" />
+            Email {{ prospectFirstName }}
+          </button>
         </div>
-        <p class="text-[19px] leading-[1.55]" style="color: var(--bg)">
-          Your story is ready. Send it to {{ prospectCompany }} while the call
-          is still fresh.
-        </p>
-
-        <p class="text-[15px] leading-[1.55] text-ink-300">
-          The best follow-ups occur within 2 to 4 hours after the call. The
-          story will start writing itself the moment they open it.
-        </p>
       </div>
-
-      <div class="flex items-center gap-[10px] shrink-0">
-        <button
-          type="button"
-          :disabled="!publicUrl"
-          class="dark-btn inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] border text-[12.5px] font-medium cursor-pointer disabled:cursor-not-allowed"
-          @click="handleCopy"
-        >
-          <IconCopy :size="13" />
-          {{ copied ? "Copied" : "Copy link" }}
-        </button>
-
-        <button
-          type="button"
-          class="dark-btn inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] border text-[12.5px] font-medium cursor-pointer"
-          @click="handleSend"
-        >
-          <IconMail :size="13" />
-          Email {{ prospectFirstName }}
-        </button>
-      </div>
-    </div>
     </template>
   </section>
 </template>
