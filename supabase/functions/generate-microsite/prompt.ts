@@ -127,7 +127,7 @@ SCHEMA — return one valid JSON object matching this structure exactly:
   "solutions": [
     {
       "header": "Short solution header — 4 words max",
-      "text": "1 to 2 crisp sentences on how the vendor solves this specific problem"
+      "text": "1 to 2 crisp sentences on how the vendor solves this specific problem. the first word should be the name of the vendor followred by a verb."
     }
   ],
   "projected_impact": [
