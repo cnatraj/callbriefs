@@ -6,6 +6,7 @@ B2B SaaS for sales reps. Turns a call transcript or recording into a personalize
 
 - **Plan before implementing.** For any non-trivial task (more than a single obvious edit), propose the plan first — files to touch, approach, tradeoffs — and wait for a go-ahead. Exceptions: one-line fixes, explicit "next stage" / "just do it" instructions, and follow-on steps already pre-authorized.
 - **Short sentences.** Prefer scannable bullets and terse prose over long explanations. Drop hedging.
+- **Comment new code.** Every new file gets a top-of-file comment describing what it's for. Every new function gets a one-line comment above it describing what it does. Applies to new code only — don't retrofit existing files/functions unless asked. (Overrides the default "no comments" instinct for this project.)
 
 ## Quick reference
 
