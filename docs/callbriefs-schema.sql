@@ -161,6 +161,8 @@ create table microsite_session_narratives (
   narrative       text,
   signals         jsonb,
   events_count    integer,
+  session_start   timestamptz,
+  session_end     timestamptz,
   status          text not null default 'processing'
                     check (status in ('processing', 'ready', 'failed')),
   generated_at    timestamp with time zone default now()
