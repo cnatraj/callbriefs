@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from "vue";
 import { MICROSITE } from "@/data/microsite";
+import { IconShare } from "@/components/icons";
+import { useMicrositeShare } from "@/composables/useMicrositeShare";
 
 const props = defineProps({
   participants: { type: Object, default: null },
@@ -13,6 +15,8 @@ const briefId = computed(() => props.slug ?? MICROSITE.briefId);
 const eyebrow = computed(() =>
   props.orgName ? `Prepared by ${props.orgName} for` : "Prepared for",
 );
+
+const { shareMicrosite } = useMicrositeShare();
 </script>
 
 <template>
@@ -28,6 +32,16 @@ const eyebrow = computed(() =>
       {{ company }}
     </div>
     <div class="mono text-[11.5px] text-ink-500">BRIEF · {{ briefId }}</div>
+    <button
+      type="button"
+      data-tracking-event="cta_clicked"
+      data-tracking-cta="share_footer"
+      class="mt-[14px] inline-flex items-center gap-[8px] px-[16px] py-[10px] rounded-[10px] border border-dashed border-ink-200 text-[13.5px] text-ink-700 hover:text-ink-900 hover:border-ink-300 transition-colors cursor-pointer bg-transparent"
+      @click="shareMicrosite"
+    >
+      <IconShare :size="14" />
+      SHARE
+    </button>
     <div
       class="mt-[10px] text-[11px] text-ink-400 inline-flex items-center gap-[6px]"
     >

@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from "vue";
 import { MICROSITE } from "@/data/microsite";
+import { IconShare } from "@/components/icons";
+import { useMicrositeShare } from "@/composables/useMicrositeShare";
 
 const props = defineProps({
   content: { type: Object, default: null },
@@ -25,6 +27,8 @@ const forName = computed(
   () =>
     props.content?.participants?.prospect?.company ?? MICROSITE.prospect.name,
 );
+
+const { shareMicrosite } = useMicrositeShare();
 </script>
 
 <template>
@@ -40,9 +44,16 @@ const forName = computed(
       />
       {{ preparedOn }}
     </span>
-    <span class="mono text-[10.5px] normal-case tracking-normal">
-      7 min read
-    </span>
+    <button
+      type="button"
+      data-tracking-event="cta_clicked"
+      data-tracking-cta="share_header"
+      class="inline-flex items-center gap-[6px] eyebrow text-ink-500 hover:text-ink-900 transition-colors cursor-pointer bg-transparent border-0 p-0"
+      @click="shareMicrosite"
+    >
+      <IconShare :size="13" />
+      Share
+    </button>
   </div>
 
   <!-- Dual-logo -->
