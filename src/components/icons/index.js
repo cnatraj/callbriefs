@@ -122,6 +122,11 @@ export const IconArrowDownToLine = make(() => [
   h('path', { d: 'm6 11 6 6 6-6' }),
   h('path', { d: 'M5 21h14' }),
 ])
+export const IconShare = make(() => [
+  h('path', { d: 'M12 16V3' }),
+  h('path', { d: 'm7 8 5-5 5 5' }),
+  h('path', { d: 'M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7' }),
+])
 export const IconMonitor = make(() => [
   h('rect', { x: 2, y: 4, width: 20, height: 13, rx: 2 }),
   h('path', { d: 'M8 21h8M12 17v4' }),
