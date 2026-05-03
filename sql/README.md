@@ -6,6 +6,7 @@ For the consolidated current schema (cold-start for a fresh project), see [../do
 
 ---
 
+22. `bracketing-bear.sql` — adds `session_start` / `session_end` timestamptz columns to `microsite_session_narratives` + backfill from `microsite_events`. Lets the session entity carry its own time bracket without re-querying raw events.
 21. `pouncing-fox.sql` — adds `device_type` column to `microsite_events`. Populated server-side by `track-event` from the request user-agent.
 20. `weaving-spider.sql` — adds `microsite_session_narratives` table + RLS, and `microsites.overall_narrative` jsonb. Phase 3 of event tracking — narration storage.
 19. `quiet-bobcat.sql` — revokes anon INSERT on `microsite_events`; the `track-event` edge function is the single write path. Apply AFTER deploying the function.

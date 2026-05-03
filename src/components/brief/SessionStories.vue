@@ -1,11 +1,14 @@
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
 import StorySessionCard from "./StorySessionCard.vue";
+import MicrositeMetrics from "./MicrositeMetrics.vue";
+import SignalsPreview from "./SignalsPreview.vue";
 import { IconClock } from "@/components/icons";
 import { getSessionNarrativesForMicrosite } from "@/services/sessionNarratives";
 
 const props = defineProps({
   micrositeId: { type: String, default: null },
+  prospectFirstName: { type: String, default: "your prospect" },
 });
 
 const rows = ref([]);
@@ -150,38 +153,44 @@ const buildDetailPills = (signals) => {
 </script>
 
 <template>
-  <section v-if="sessions.length" class="flex flex-col gap-[14px]">
-    <header class="flex items-baseline justify-between">
-      <span class="eyebrow text-ink-500">Sessions</span>
-      <span class="mono text-[10.5px] text-ink-500">
-        {{ sessions.length }} · newest first
-      </span>
-    </header>
+  <section class="flex flex-col gap-[20px]">
+    <MicrositeMetrics :narratives="rows" />
 
-    <div class="flex flex-col gap-[16px]">
-      <div
-        v-for="(session, idx) in sessions"
-        :key="session.id"
-        class="flex gap-[14px]"
-      >
-        <!-- Timeline column: dot + connecting line -->
-        <div class="relative shrink-0 w-[10px] flex flex-col items-center">
-          <span
-            class="w-[10px] h-[10px] rounded-full mt-[22px] shrink-0 z-[1]"
-            :style="
-              session.is_active
-                ? 'background: var(--accent); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent);'
-                : 'background: var(--ink-700);'
-            "
-          />
-          <span
-            v-if="idx < sessions.length - 1"
-            class="absolute left-1/2 -translate-x-1/2 top-[36px] bottom-[-16px] w-px bg-ink-200"
-          />
+    <div v-if="sessions.length" class="flex flex-col gap-[14px]">
+      <header class="flex items-baseline justify-between">
+        <span class="eyebrow text-ink-500">Sessions</span>
+        <span class="mono text-[10.5px] text-ink-500">
+          {{ sessions.length }} · newest first
+        </span>
+      </header>
+
+      <div class="flex flex-col gap-[16px]">
+        <div
+          v-for="(session, idx) in sessions"
+          :key="session.id"
+          class="flex gap-[14px]"
+        >
+          <!-- Timeline column: dot + connecting line -->
+          <div class="relative shrink-0 w-[10px] flex flex-col items-center">
+            <span
+              class="w-[10px] h-[10px] rounded-full mt-[22px] shrink-0 z-[1]"
+              :style="
+                session.is_active
+                  ? 'background: var(--accent); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent);'
+                  : 'background: var(--ink-700);'
+              "
+            />
+            <span
+              v-if="idx < sessions.length - 1"
+              class="absolute left-1/2 -translate-x-1/2 top-[36px] bottom-[-16px] w-px bg-ink-200"
+            />
+          </div>
+
+          <StorySessionCard :session="session" class="flex-1" />
         </div>
-
-        <StorySessionCard :session="session" class="flex-1" />
       </div>
     </div>
+
+    <SignalsPreview v-else :prospect-first-name="prospectFirstName" />
   </section>
 </template>

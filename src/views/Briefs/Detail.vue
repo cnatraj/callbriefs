@@ -7,7 +7,6 @@ import BriefHero from "@/components/brief/BriefHero.vue";
 import OverallStory from "@/components/brief/OverallStory.vue";
 import SuggestedEmail from "@/components/brief/SuggestedEmail.vue";
 import SessionStories from "@/components/brief/SessionStories.vue";
-import SignalsPreview from "@/components/brief/SignalsPreview.vue";
 import ReminderStrip from "@/components/brief/ReminderStrip.vue";
 
 const props = defineProps({
@@ -77,13 +76,6 @@ const prospectCompany = computed(
     content.value?.participants?.prospect?.company ||
     "their company",
 );
-
-// Story-feed switch. Uses the overall_narrative as a proxy for "does
-// this microsite have any narrated sessions yet" — narrate-session
-// writes both microsite_session_narratives rows AND updates
-// microsites.overall_narrative in the same flow, so this flag flips
-// once the first narration lands.
-const hasViews = computed(() => !!microsite.value?.overall_narrative);
 
 const showPreview = () => {
   if (!microsite.value?.id) return;
@@ -164,9 +156,10 @@ const goBriefs = () => router.push("/briefs");
         :prospect-first-name="prospectFirstName"
         :prospect-company="prospectCompany"
       />
-      <SessionStories v-if="hasViews" :microsite-id="microsite?.id" />
-
-      <SignalsPreview v-else :prospect-first-name="prospectFirstName" />
+      <SessionStories
+        :microsite-id="microsite?.id"
+        :prospect-first-name="prospectFirstName"
+      />
 
       <ReminderStrip :prospect-first-name="prospectFirstName" />
     </div>

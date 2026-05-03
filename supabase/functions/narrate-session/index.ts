@@ -179,6 +179,17 @@ const narrate = async (narrativeId: string, record: any) => {
     return;
   }
 
+  // Pull session_start / session_end timestamps from the events array we
+  // already loaded. session_end is the trigger event so it should always
+  // exist; session_start may be missing for very early Phase 1 rows that
+  // didn't emit it, in which case we fall back to the first event's time.
+  const sessionStart =
+    events?.find((e) => e.event_type === "session_start")?.created_at ??
+    events?.[0]?.created_at ??
+    null;
+  const sessionEnd =
+    events?.find((e) => e.event_type === "session_end")?.created_at ?? null;
+
   // Update the narrative row.
   const { error: updateErr } = await supabase
     .from("microsite_session_narratives")
@@ -186,6 +197,8 @@ const narrate = async (narrativeId: string, record: any) => {
       narrative: session.narrative ?? null,
       signals: session.signals ?? null,
       events_count: events?.length ?? 0,
+      session_start: sessionStart,
+      session_end: sessionEnd,
       status: "ready",
     })
     .eq("id", narrativeId);

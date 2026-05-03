@@ -6,7 +6,7 @@ export const getSessionNarrativesForMicrosite = (micrositeId) =>
   supabase
     .from('microsite_session_narratives')
     .select(
-      'id, session_id, microsite_id, fingerprint_id, narrative, signals, events_count, status, generated_at',
+      'id, session_id, microsite_id, fingerprint_id, narrative, signals, events_count, session_start, session_end, status, generated_at',
     )
     .eq('microsite_id', micrositeId)
     .eq('status', 'ready')
