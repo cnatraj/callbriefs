@@ -13,17 +13,35 @@ const props = defineProps({
 });
 
 const pad2 = (i) => String(i + 1).padStart(2, "0");
+const upper = (s) => (s ? s.toUpperCase() : "");
 
-// Section 01 — map content.challenges into the template's {mark, quote, attrib}
-// shape. mark is derived from index; severity goes in the attrib slot until
-// we restyle that line.
-const heard = computed(() => {
-  const list = props.content?.challenges;
-  if (!list?.length) return MICROSITE.heard;
-  return list.map((c, i) => ({
+// Section 01 — pair each challenge with its matching solution by index.
+// LLM contract emits parallel arrays, so challenges[i] ↔ solutions[i].
+// Defensive: cap at min length so a mismatch doesn't render blank halves.
+const items = computed(() => {
+  const challenges = props.content?.challenges;
+  const solutions = props.content?.solutions;
+  if (challenges?.length) {
+    const n = Math.min(
+      challenges.length,
+      solutions?.length ?? challenges.length,
+    );
+    return Array.from({ length: n }, (_, i) => ({
+      mark: pad2(i),
+      tag: upper(solutions?.[i]?.header),
+      problem: challenges[i]?.challenge,
+      solution: solutions?.[i]?.text,
+    }));
+  }
+  // Demo /m/ fallback — pair MICROSITE mock arrays with the same shape.
+  const mockH = MICROSITE.heard;
+  const mockS = MICROSITE.solutions;
+  const n = Math.min(mockH.length, mockS.length);
+  return Array.from({ length: n }, (_, i) => ({
     mark: pad2(i),
-    quote: c.challenge,
-    attrib: c.severity ? `Severity · ${c.severity}` : "",
+    tag: upper(mockH[i]?.attrib),
+    problem: mockH[i]?.quote,
+    solution: mockS[i]?.body,
   }));
 });
 
@@ -32,17 +50,6 @@ const toolsUsed = computed(() => props.content?.tools_used ?? []);
 const company = computed(
   () => props.content?.participants?.prospect?.company ?? "Fieldstone",
 );
-
-// Section 02 — map content.solutions into the template's {tag, title, body}
-// shape. tag is derived from index ("PROBLEM 01", "PROBLEM 02", ...).
-const solutions = computed(() => {
-  const list = props.content?.solutions;
-  if (!list?.length) return MICROSITE.solutions;
-  return list.map((s, i) => ({
-    title: s.header,
-    body: s.text,
-  }));
-});
 
 // Section 03 — map content.projected_impact into the template's
 // {label, value} shape.
@@ -99,25 +106,31 @@ const nextSteps = computed(() => {
       <SectionHeader num="01" label="What we heard" />
       <div class="flex flex-col gap-[10px]">
         <div
-          v-for="h in heard"
-          :key="h.mark"
-          class="flex gap-3 p-[14px] border border-ink-150 rounded-[12px] bg-surface"
+          v-for="item in items"
+          :key="item.mark"
+          class="flex gap-3 p-[18px] border border-ink-150 rounded-[12px] bg-surface"
         >
           <div
             class="w-[26px] h-[26px] rounded-[8px] bg-nav-bg border border-ink-100 text-ink-700 grid place-items-center mono text-[11px] font-semibold shrink-0"
           >
-            {{ h.mark }}
+            {{ item.mark }}
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
+            <div v-if="item.tag" class="eyebrow mb-[10px]">
+              {{ item.tag }}
+            </div>
             <div
-              class="text-[14.5px] text-ink-900 leading-[1.5]"
+              class="text-[15px] text-ink-900 leading-[1.55]"
               style="letter-spacing: -0.005em"
             >
-              {{ h.quote }}
+              {{ item.problem }}
             </div>
-            <div class="text-[11.5px] text-ink-500 mt-[6px]">
-              {{ h.attrib }}
-            </div>
+            <template v-if="item.solution">
+              <div class="my-[16px] border-t border-ink-100" />
+              <p class="text-[13.5px] text-ink-700 leading-[1.55] m-0">
+                {{ item.solution }}
+              </p>
+            </template>
           </div>
         </div>
       </div>
@@ -137,31 +150,9 @@ const nextSteps = computed(() => {
     </div>
   </section> -->
 
-    <!-- 02 Solutions -->
+    <!-- 02 Metrics -->
     <section>
-      <SectionHeader num="02" label="How we’d solve it" />
-      <div class="flex flex-col">
-        <div
-          v-for="s in solutions"
-          :key="s.tag"
-          class="py-4 border-t border-ink-100 flex flex-col gap-[10px]"
-        >
-          <div
-            class="text-[15px] font-semibold text-ink-900 leading-[1.3]"
-            style="letter-spacing: -0.015em"
-          >
-            {{ s.title }}
-          </div>
-          <p class="text-[13.5px] text-ink-500 leading-[1.55] m-0">
-            {{ s.body }}
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 03 Metrics -->
-    <section>
-      <SectionHeader num="03" :label="`Projected impact for ${company}`" />
+      <SectionHeader num="02" label="What our customers typically see." />
       <div class="flex flex-col gap-[10px]">
         <div
           v-for="m in metrics"
@@ -193,12 +184,12 @@ const nextSteps = computed(() => {
       </div>
     </section>
 
-    <!-- 04 Closer -->
+    <!-- Closer -->
     <Closer :content="content" :created-at="createdAt" />
 
-    <!-- 05 Next steps -->
+    <!-- 03 Next steps -->
     <section>
-      <SectionHeader num="04" label="Next steps" />
+      <SectionHeader num="03" label="Next steps" />
       <div class="flex flex-col">
         <div
           v-for="s in nextSteps"
