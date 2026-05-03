@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from "vue";
 import SectionHeader from "./SectionHeader.vue";
-import Closer from "./Closer.vue";
 import { MICROSITE } from "@/data/microsite";
 import {
   IconBolt,
@@ -53,7 +52,6 @@ const resolveIcon = (name) => ICON_MAP[name] ?? IconStar;
 
 const props = defineProps({
   content: { type: Object, default: null },
-  createdAt: { type: String, default: null },
 });
 
 const title = computed(
@@ -223,7 +221,5 @@ const trustedByLastRow = computed(
     </div>
   </section>
 
-  <!-- Closer -->
-  <Closer :content="content" :created-at="createdAt" />
   </div>
 </template>

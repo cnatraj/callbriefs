@@ -41,8 +41,8 @@ watch(tab, (v) => {
     />
     <Tabs v-model="tab" />
     <div class="px-6 pt-[6px] pb-7 flex flex-col gap-7">
-      <HeardTab v-if="tab === 'heard'" :content="content" />
-      <WhyTab v-else :content="content" :created-at="createdAt" />
+      <HeardTab v-if="tab === 'heard'" :content="content" :created-at="createdAt" />
+      <WhyTab v-else :content="content" />
     </div>
     <Footer
       :participants="content?.participants"

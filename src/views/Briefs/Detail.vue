@@ -5,6 +5,7 @@ import { useCallsStore } from "@/stores/calls";
 import { usePreviewDrawer } from "@/composables/usePreviewDrawer";
 import BriefHero from "@/components/brief/BriefHero.vue";
 import OverallStory from "@/components/brief/OverallStory.vue";
+import SuggestedEmail from "@/components/brief/SuggestedEmail.vue";
 import SessionStories from "@/components/brief/SessionStories.vue";
 import SignalsPreview from "@/components/brief/SignalsPreview.vue";
 import ReminderStrip from "@/components/brief/ReminderStrip.vue";
@@ -153,10 +154,15 @@ const goBriefs = () => router.push("/briefs");
       />
 
       <OverallStory
-        :slug="slug"
         :prospect-first-name="prospectFirstName"
         :prospect-company="prospectCompany"
         :overall-narrative="microsite?.overall_narrative"
+      />
+      <SuggestedEmail
+        v-if="microsite?.overall_narrative?.narrative"
+        :slug="slug"
+        :prospect-first-name="prospectFirstName"
+        :prospect-company="prospectCompany"
       />
       <SessionStories v-if="hasViews" :microsite-id="microsite?.id" />
 

@@ -3,11 +3,13 @@ import { computed } from "vue";
 import SectionHeader from "./SectionHeader.vue";
 import StrategicObjective from "./StrategicObjective.vue";
 import ShareCard from "@/components/microsite/ShareCard.vue";
+import Closer from "./Closer.vue";
 import { MICROSITE } from "@/data/microsite";
 import { IconCheck } from "@/components/icons";
 
 const props = defineProps({
   content: { type: Object, default: null },
+  createdAt: { type: String, default: null },
 });
 
 const pad2 = (i) => String(i + 1).padStart(2, "0");
@@ -89,38 +91,40 @@ const nextSteps = computed(() => {
 
 <template>
   <div data-section-name="what_we_heard" class="flex flex-col gap-7">
-  <!-- Strategic objective -->
-  <StrategicObjective :content="content?.strategic_objective" />
+    <!-- Strategic objective -->
+    <StrategicObjective :content="content?.strategic_objective" />
 
-  <!-- 01 What we heard -->
-  <section>
-    <SectionHeader num="01" label="What we heard" />
-    <div class="flex flex-col gap-[10px]">
-      <div
-        v-for="h in heard"
-        :key="h.mark"
-        class="flex gap-3 p-[14px] border border-ink-150 rounded-[12px] bg-surface"
-      >
+    <!-- 01 What we heard -->
+    <section>
+      <SectionHeader num="01" label="What we heard" />
+      <div class="flex flex-col gap-[10px]">
         <div
-          class="w-[26px] h-[26px] rounded-[8px] bg-nav-bg border border-ink-100 text-ink-700 grid place-items-center mono text-[11px] font-semibold shrink-0"
+          v-for="h in heard"
+          :key="h.mark"
+          class="flex gap-3 p-[14px] border border-ink-150 rounded-[12px] bg-surface"
         >
-          {{ h.mark }}
-        </div>
-        <div class="min-w-0">
           <div
-            class="text-[14.5px] text-ink-900 leading-[1.5]"
-            style="letter-spacing: -0.005em"
+            class="w-[26px] h-[26px] rounded-[8px] bg-nav-bg border border-ink-100 text-ink-700 grid place-items-center mono text-[11px] font-semibold shrink-0"
           >
-            {{ h.quote }}
+            {{ h.mark }}
           </div>
-          <div class="text-[11.5px] text-ink-500 mt-[6px]">{{ h.attrib }}</div>
+          <div class="min-w-0">
+            <div
+              class="text-[14.5px] text-ink-900 leading-[1.5]"
+              style="letter-spacing: -0.005em"
+            >
+              {{ h.quote }}
+            </div>
+            <div class="text-[11.5px] text-ink-500 mt-[6px]">
+              {{ h.attrib }}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Tool stack -->
-  <!-- <section v-if="toolsUsed.length">
+    <!-- Tool stack -->
+    <!-- <section v-if="toolsUsed.length">
     <div class="eyebrow mb-[10px]">Currently using</div>
     <div class="flex flex-wrap gap-[6px]">
       <span
@@ -133,103 +137,107 @@ const nextSteps = computed(() => {
     </div>
   </section> -->
 
-  <!-- 02 Solutions -->
-  <section>
-    <SectionHeader num="02" label="How we’d solve it" />
-    <div class="flex flex-col">
-      <div
-        v-for="s in solutions"
-        :key="s.tag"
-        class="py-4 border-t border-ink-100 flex flex-col gap-[10px]"
-      >
+    <!-- 02 Solutions -->
+    <section>
+      <SectionHeader num="02" label="How we’d solve it" />
+      <div class="flex flex-col">
         <div
-          class="text-[15px] font-semibold text-ink-900 leading-[1.3]"
-          style="letter-spacing: -0.015em"
+          v-for="s in solutions"
+          :key="s.tag"
+          class="py-4 border-t border-ink-100 flex flex-col gap-[10px]"
         >
-          {{ s.title }}
-        </div>
-        <p class="text-[13.5px] text-ink-500 leading-[1.55] m-0">
-          {{ s.body }}
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 03 Metrics -->
-  <section>
-    <SectionHeader num="03" :label="`Projected impact for ${company}`" />
-    <div class="flex flex-col gap-[10px]">
-      <div
-        v-for="m in metrics"
-        :key="m.label"
-        class="flex items-center justify-between gap-[14px] p-[18px] border border-ink-150 rounded-[12px] bg-surface"
-      >
-        <div class="min-w-0">
-          <div class="text-[12.5px] text-ink-500 mb-[2px]">{{ m.label }}</div>
-          <div class="flex items-baseline gap-2">
-            <span
-              class="text-[30px] font-semibold text-ink-900 leading-none"
-              style="letter-spacing: -0.03em"
-            >
-              {{ m.value }}
-            </span>
-            <span class="text-[13.5px] text-ink-500 font-medium">
-              {{ m.unit }}
-            </span>
-          </div>
-          <div class="mono text-[11px] text-ink-500 mt-[6px]">
-            {{ m.source }}
-          </div>
-        </div>
-        <div
-          class="w-2 h-2 rounded-[2px] bg-accent shrink-0"
-          style="box-shadow: inset 0 0 0 1px var(--accent-strong)"
-        />
-      </div>
-    </div>
-  </section>
-
-  <!-- 04 Next steps -->
-  <section>
-    <SectionHeader num="04" label="Next steps" />
-    <div class="flex flex-col">
-      <div
-        v-for="s in nextSteps"
-        :key="s.n"
-        class="flex items-start gap-[14px] py-4 border-t border-ink-100"
-      >
-        <div
-          class="w-[26px] h-[26px] rounded-full grid place-items-center mono text-[12px] font-semibold shrink-0 mt-[1px]"
-          :class="{
-            'bg-ink-900 text-bg': s.status === 'done',
-            'bg-accent text-accent-ink': s.status === 'next',
-            'bg-surface text-ink-700': s.status === 'todo',
-          }"
-          :style="
-            s.status === 'done'
-              ? 'border: 1px solid var(--ink-900);'
-              : s.status === 'next'
-                ? 'border: 1px solid var(--accent-strong);'
-                : 'border: 1px solid var(--ink-200);'
-          "
-        >
-          <IconCheck v-if="s.status === 'done'" :size="11" :sw="3.5" />
-          <template v-else>{{ s.n }}</template>
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="font-medium text-ink-900 leading-[1.4]">
+          <div
+            class="text-[15px] font-semibold text-ink-900 leading-[1.3]"
+            style="letter-spacing: -0.015em"
+          >
             {{ s.title }}
           </div>
+          <p class="text-[13.5px] text-ink-500 leading-[1.55] m-0">
+            {{ s.body }}
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 Metrics -->
+    <section>
+      <SectionHeader num="03" :label="`Projected impact for ${company}`" />
+      <div class="flex flex-col gap-[10px]">
+        <div
+          v-for="m in metrics"
+          :key="m.label"
+          class="flex items-center justify-between gap-[14px] p-[18px] border border-ink-150 rounded-[12px] bg-surface"
+        >
+          <div class="min-w-0">
+            <div class="text-[12.5px] text-ink-500 mb-[2px]">{{ m.label }}</div>
+            <div class="flex items-baseline gap-2">
+              <span
+                class="text-[30px] font-semibold text-ink-900 leading-none"
+                style="letter-spacing: -0.03em"
+              >
+                {{ m.value }}
+              </span>
+              <span class="text-[13.5px] text-ink-500 font-medium">
+                {{ m.unit }}
+              </span>
+            </div>
+            <div class="mono text-[11px] text-ink-500 mt-[6px]">
+              {{ m.source }}
+            </div>
+          </div>
           <div
-            v-if="s.meta"
-            class="text-[12px] text-ink-500 leading-[1.4] mt-[6px]"
+            class="w-2 h-2 rounded-[2px] bg-accent shrink-0"
+            style="box-shadow: inset 0 0 0 1px var(--accent-strong)"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 Closer -->
+    <Closer :content="content" :created-at="createdAt" />
+
+    <!-- 05 Next steps -->
+    <section>
+      <SectionHeader num="04" label="Next steps" />
+      <div class="flex flex-col">
+        <div
+          v-for="s in nextSteps"
+          :key="s.n"
+          class="flex items-start gap-[14px] py-4 border-t border-ink-100"
+        >
+          <div
+            class="w-[26px] h-[26px] rounded-full grid place-items-center mono text-[12px] font-semibold shrink-0 mt-[1px]"
+            :class="{
+              'bg-ink-900 text-bg': s.status === 'done',
+              'bg-accent text-accent-ink': s.status === 'next',
+              'bg-surface text-ink-700': s.status === 'todo',
+            }"
+            :style="
+              s.status === 'done'
+                ? 'border: 1px solid var(--ink-900);'
+                : s.status === 'next'
+                  ? 'border: 1px solid var(--accent-strong);'
+                  : 'border: 1px solid var(--ink-200);'
+            "
           >
-            {{ s.meta }}
+            <IconCheck v-if="s.status === 'done'" :size="11" :sw="3.5" />
+            <template v-else>{{ s.n }}</template>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="font-medium text-ink-900 leading-[1.4]">
+              {{ s.title }}
+            </div>
+            <div
+              v-if="s.meta"
+              class="text-[12px] text-ink-500 leading-[1.4] mt-[6px]"
+            >
+              {{ s.meta }}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-  <ShareCard :company="content?.participants?.prospect?.company" />
+    </section>
+
+    <ShareCard :company="content?.participants?.prospect?.company" />
   </div>
 </template>
