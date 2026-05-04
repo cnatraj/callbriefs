@@ -6,7 +6,7 @@
 // the rep can fire off while the call is fresh.
 
 import { computed, ref, watch } from "vue";
-import { IconChevronDown, IconCopy } from "@/components/icons";
+import { IconChevronDown, IconCopy, IconLink } from "@/components/icons";
 import { useCallsStore } from "@/stores/calls";
 
 const props = defineProps({
@@ -40,12 +40,14 @@ const publicUrl = computed(() => {
 
 const tone = ref("casual");
 
-// Two pre-baked drafts keyed by tone. Recompute whenever any input
-// changes so the editor reflects the latest props/owner.
+// Two pre-baked drafts keyed by tone. Subject + body are merged into a
+// single string with a "Subject:" header line so the rep edits one
+// surface. Recomputes whenever any input changes so the editor
+// reflects the latest props/owner.
 const templates = computed(() => ({
-  casual: {
-    subject: `Quick recap from our chat`,
-    body: `Hey ${props.prospectFirstName},
+  casual: `Subject: Quick recap from our chat
+
+Hey ${props.prospectFirstName},
 
 Thanks for the time today. I put together a quick brief covering what we discussed and a few next steps:
 
@@ -54,10 +56,9 @@ ${publicUrl.value}
 Have a look when you get a moment. Happy to jump back on if anything stands out.
 
 ${ownerFirstName.value}`,
-  },
-  formal: {
-    subject: `Following up on our conversation`,
-    body: `Hi ${props.prospectFirstName},
+  formal: `Subject: Following up on our conversation
+
+Hi ${props.prospectFirstName},
 
 Thank you for the conversation today. I've prepared a personalized brief summarizing the priorities you raised and the next steps we discussed:
 
@@ -67,17 +68,13 @@ Please review at your convenience. I'd be glad to schedule a follow-up to addres
 
 Best regards,
 ${ownerFirstName.value}${orgName.value ? `\n${orgName.value}` : ""}`,
-  },
 }));
 
-const subject = ref(templates.value.casual.subject);
-const body = ref(templates.value.casual.body);
+const emailText = ref(templates.value.casual);
 
-// Reset subject + body to the active tone's template.
+// Reset the email textarea to the active tone's template.
 const applyTemplate = () => {
-  const t = templates.value[tone.value];
-  subject.value = t.subject;
-  body.value = t.body;
+  emailText.value = templates.value[tone.value];
 };
 
 // Silent reset when tone switches; user edits are intentionally discarded.
@@ -86,12 +83,10 @@ watch(tone, applyTemplate);
 const copied = ref(false);
 let resetTimer = null;
 
-// Copy "Subject: ... \n\n body" to the clipboard, briefly flash "Copied".
+// Copy the entire email (subject + body) to the clipboard, flash "Copied".
 const handleCopy = async () => {
   try {
-    await navigator.clipboard.writeText(
-      `Subject: ${subject.value}\n\n${body.value}`,
-    );
+    await navigator.clipboard.writeText(emailText.value);
     copied.value = true;
     if (resetTimer) clearTimeout(resetTimer);
     resetTimer = setTimeout(() => {
@@ -99,6 +94,24 @@ const handleCopy = async () => {
     }, 1500);
   } catch (err) {
     console.error("[suggested-email-copy] clipboard write failed:", err);
+  }
+};
+
+const linkCopied = ref(false);
+let linkResetTimer = null;
+
+// Copy just the public microsite URL to the clipboard.
+const handleCopyLink = async () => {
+  if (!publicUrl.value) return;
+  try {
+    await navigator.clipboard.writeText(publicUrl.value);
+    linkCopied.value = true;
+    if (linkResetTimer) clearTimeout(linkResetTimer);
+    linkResetTimer = setTimeout(() => {
+      linkCopied.value = false;
+    }, 1500);
+  } catch (err) {
+    console.error("[suggested-email-copy] link copy failed:", err);
   }
 };
 </script>
@@ -129,29 +142,18 @@ const handleCopy = async () => {
     </button>
 
     <div v-if="isOpen" class="px-[28px] pb-[20px] pt-[6px]">
-      <!-- Subject -->
-      <div class="flex flex-col gap-[6px] mb-[12px]">
-        <label class="eyebrow text-ink-500" for="snm-subject">Subject</label>
-        <input
-          id="snm-subject"
-          v-model="subject"
-          type="text"
-          class="px-[12px] py-[10px] rounded-[8px] bg-surface border border-ink-150 text-ink-900 outline-none focus:border-ink-300"
-        />
-      </div>
-
-      <!-- Body -->
+      <!-- Email (subject + body in a single editor) -->
       <div class="flex flex-col gap-[6px] mb-[16px]">
-        <label class="eyebrow text-ink-500" for="snm-body">Body</label>
+        <label class="eyebrow text-ink-500" for="snm-email">Email</label>
         <textarea
-          id="snm-body"
-          v-model="body"
-          rows="10"
+          id="snm-email"
+          v-model="emailText"
+          rows="14"
           class="px-[12px] py-[10px] rounded-[8px] bg-surface border border-ink-150 text-ink-900 leading-[1.55] outline-none focus:border-ink-300 resize-y"
         ></textarea>
       </div>
 
-      <!-- Footer row: tone toggle on left, Copy email button on right -->
+      <!-- Footer row: tone toggle on left, action buttons on right -->
       <div class="flex items-center justify-between gap-[12px]">
         <div
           class="inline-flex p-[3px] rounded-lg bg-ink-100 border border-ink-150"
@@ -182,20 +184,32 @@ const handleCopy = async () => {
           </button>
         </div>
 
-        <button
-          type="button"
-          class="inline-flex items-center gap-[8px] px-[14px] py-[9px] rounded-[9px] font-medium cursor-pointer"
-          style="
-            background: var(--accent);
-            color: var(--accent-ink);
-            border: 1px solid var(--accent-strong);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-          "
-          @click="handleCopy"
-        >
-          <IconCopy :size="14" />
-          {{ copied ? "Copied" : "Copy email" }}
-        </button>
+        <div class="flex items-center gap-[8px]">
+          <button
+            type="button"
+            :disabled="!publicUrl"
+            class="inline-flex items-center gap-[8px] px-[14px] py-[9px] rounded-[9px] font-medium cursor-pointer bg-surface border border-ink-200 text-ink-900 hover:bg-ink-100 transition-colors disabled:cursor-not-allowed disabled:text-ink-400"
+            @click="handleCopyLink"
+          >
+            <IconLink :size="14" />
+            {{ linkCopied ? "Copied" : "Copy link to microsite" }}
+          </button>
+
+          <button
+            type="button"
+            class="inline-flex items-center gap-[8px] px-[14px] py-[9px] rounded-[9px] font-medium cursor-pointer"
+            style="
+              background: var(--accent);
+              color: var(--accent-ink);
+              border: 1px solid var(--accent-strong);
+              box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            "
+            @click="handleCopy"
+          >
+            <IconCopy :size="14" />
+            {{ copied ? "Copied" : "Copy email" }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
