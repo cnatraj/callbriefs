@@ -155,7 +155,7 @@ const goBriefs = () => router.push("/briefs");
         :prospect-first-name="prospectFirstName"
       />
 
-      <ReminderStrip :prospect-first-name="prospectFirstName" />
+      <!-- <ReminderStrip :prospect-first-name="prospectFirstName" /> -->
     </div>
   </div>
 </template>

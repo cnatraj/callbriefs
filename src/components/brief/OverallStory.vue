@@ -119,14 +119,14 @@ const overallPills = computed(() => {
 
         <div class="flex-1 min-w-0">
           <div class="eyebrow text-ink-500">
-            The Story · Waiting for first view
+            Your Microsite is ready. Waiting for the first view.
           </div>
 
           <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
             Your microsite for
             <span class="font-semibold">{{ prospectCompany }}</span> is live and
-            the link is ready to be shared. To get started, copy the link above
-            and paste it into an email to {{ prospectFirstName }}.
+            the link is ready to be shared. Use the email below to send it to
+            {{ prospectFirstName }} — it takes 30 seconds.
           </p>
           <p class="mt-[14px] text-[16px] leading-[1.6] text-ink-900">
             <span class="text-ink-500">

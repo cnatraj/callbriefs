@@ -154,7 +154,7 @@ const buildDetailPills = (signals) => {
 
 <template>
   <section class="flex flex-col gap-[20px]">
-    <MicrositeMetrics :narratives="rows" />
+    <MicrositeMetrics v-if="sessions.length" :narratives="rows" />
 
     <div v-if="sessions.length" class="flex flex-col gap-[14px]">
       <header class="flex items-baseline justify-between">

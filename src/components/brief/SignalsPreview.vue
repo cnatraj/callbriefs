@@ -34,7 +34,7 @@ const cards = computed(() => [
     <div class="flex items-baseline justify-between">
       <div class="eyebrow text-ink-500">What you'll see</div>
       <div class="mono text-[10.5px] text-ink-500">
-        signals worth a follow-up
+        here's what we'll surface for you
       </div>
     </div>
 
