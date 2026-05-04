@@ -8,12 +8,16 @@ import {
   IconUsers,
   IconEye,
 } from "@/components/icons";
+import SuggestedEmailCopy from "./SuggestedEmailCopy.vue";
 
 const props = defineProps({
   prospectFirstName: { type: String, default: "Maya" },
   prospectCompany: { type: String, default: "Acuity Robotics" },
   // microsites.overall_narrative — { narrative, signals } | null
   overallNarrative: { type: Object, default: null },
+  // microsite slug — used to build the public URL inside the embedded
+  // SuggestedEmailCopy email body.
+  slug: { type: String, default: null },
 });
 
 const hasNarrative = computed(() => !!props.overallNarrative?.narrative);
@@ -65,7 +69,7 @@ const overallPills = computed(() => {
 
 <template>
   <section
-    class="rounded-[14px] border border-ink-150 bg-surface px-[28px] py-[28px]"
+    class="rounded-[14px] border border-ink-150 bg-surface px-[28px] py-[28px] overflow-hidden"
   >
     <!-- Has narrative: show the LLM's overall story across all sessions -->
     <div v-if="hasNarrative">
@@ -142,5 +146,11 @@ const overallPills = computed(() => {
         </div>
       </div>
     </div>
+
+    <SuggestedEmailCopy
+      :slug="slug"
+      :prospect-first-name="prospectFirstName"
+      :prospect-company="prospectCompany"
+    />
   </section>
 </template>
