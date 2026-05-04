@@ -36,7 +36,7 @@ watch(
   <AppDrawer :open="isOpen" width="500px" @close="close">
     <template #header>
       <div class="eyebrow text-ink-500 mb-[6px]">
-        Preview · as the prospect sees it
+        Microsite Preview · as the prospect sees it
       </div>
       <div
         class="text-[18px] font-semibold text-ink-900 truncate"
