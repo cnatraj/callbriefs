@@ -129,7 +129,7 @@ const formattedNarrative = computed(() => {
     />
 
     <!-- Read map line -->
-    <button
+    <!-- <button
       type="button"
       class="mt-[14px] flex items-center justify-between w-full text-[12.5px] text-ink-500 cursor-pointer bg-transparent border-0 p-0"
     >
@@ -141,7 +141,7 @@ const formattedNarrative = computed(() => {
         sections reached
       </span>
       <IconChevronDown :size="12" />
-    </button>
+    </button> -->
 
     <!-- Signal pills -->
     <div
